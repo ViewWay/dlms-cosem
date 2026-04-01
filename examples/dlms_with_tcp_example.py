@@ -5,16 +5,16 @@ from time import sleep
 from dateutil import parser as dateparser
 
 from dlms_cosem import a_xdr, cosem, enumerations
-from dlms_cosem.security import (
-    NoSecurityAuthentication,
-    HighLevelSecurityGmacAuthentication,
-)
 from dlms_cosem.client import DlmsClient
-from dlms_cosem.io import BlockingTcpIO, TcpTransport
 from dlms_cosem.cosem import selective_access
 from dlms_cosem.cosem.selective_access import RangeDescriptor
+from dlms_cosem.io import BlockingTcpIO, TcpTransport
 from dlms_cosem.parsers import ProfileGenericBufferParser
 from dlms_cosem.protocol.xdlms.conformance import Conformance
+from dlms_cosem.security import (
+    HighLevelSecurityGmacAuthentication,
+    NoSecurityAuthentication,
+)
 
 # set up logging so you get a bit nicer printout of what is happening.
 logging.basicConfig(

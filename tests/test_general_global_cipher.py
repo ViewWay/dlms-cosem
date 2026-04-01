@@ -57,11 +57,15 @@ def test_gen_glo_cipher_with_no_system_title_encodes_correct():
     ciphered = GeneralGlobalCipher(
         system_title=None,
         security_control=SecurityControlField(
-            security_suite=0, authenticated=True,
-            encrypted=True, broadcast_key=False,
-            compressed=False),
+            security_suite=0,
+            authenticated=True,
+            encrypted=True,
+            broadcast_key=False,
+            compressed=False,
+        ),
         invocation_counter=2147483857,
-        ciphered_text=b'\x81\xec\x9e\xc4\xbfS\xe9wn\xf0\xc4S\x96\x9f\xbd\xfe\x11\xbe\x9by\x1a\xac\xc0\xff\x8c')
+        ciphered_text=b"\x81\xec\x9e\xc4\xbfS\xe9wn\xf0\xc4S\x96\x9f\xbd\xfe\x11\xbe\x9by\x1a\xac\xc0\xff\x8c",
+    )
 
     correct_result = b"\xdb\x00\x1e0\x80\x00\x00\xd1\x81\xec\x9e\xc4\xbfS\xe9wn\xf0\xc4S\x96\x9f\xbd\xfe\x11\xbe\x9by\x1a\xac\xc0\xff\x8c"
     assert ciphered.to_bytes() == correct_result

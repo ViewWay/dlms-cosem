@@ -1,8 +1,10 @@
 from dateutil import parser
 
+import pytest
+
 from dlms_cosem import cosem, enumerations
 from dlms_cosem.cosem import selective_access
-from dlms_cosem.cosem.selective_access import RangeDescriptor
+from dlms_cosem.cosem.selective_access import EntryDescriptor, RangeDescriptor
 from dlms_cosem.protocol.xdlms import GetRequestFactory
 
 
@@ -80,7 +82,6 @@ def test_range_descriptor_to_bytes():
 
 
 def test_parse_range_descriptor():
-
     """
     Profile: 1 (15 minutes profile)
     From: 01.10.2017 00:00
@@ -114,3 +115,112 @@ def test_parse_range_descriptor():
         access_selection.restricting_object.cosem_attribute.instance.to_string()
         == "0-0:1.0.0.255"
     )
+
+
+class TestEntryDescriptor:
+    """Tests for EntryDescriptor selective access."""
+
+    def test_entry_descriptor_to_bytes(self):
+        """Test encoding an EntryDescriptor."""
+        ed = EntryDescriptor(
+            from_entry=1,
+            to_entry=10,
+            from_selected_value=1,
+            to_selected_value=5,
+        )
+
+        # Expected structure using DLMS data encoding:
+        # 0x02 - access_descriptor (EntryDescriptor)
+        # 0x04 - structure of 4 elements
+        # 0x06 0x00 0x00 0x00 0x01 - from_entry (DoubleLongUnsignedData, no length byte)
+        # 0x06 0x00 0x00 0x00 0x0A - to_entry (DoubleLongUnsignedData, no length byte)
+        # 0x12 0x00 0x01 - from_selected_value (UnsignedLongData)
+        # 0x12 0x00 0x05 - to_selected_value (UnsignedLongData)
+        expected = (
+            b"\x02\x04"
+            b"\x06\x00\x00\x00\x01"
+            b"\x06\x00\x00\x00\x0A"
+            b"\x12\x00\x01"
+            b"\x12\x00\x05"
+        )
+        assert ed.to_bytes() == expected
+
+    def test_entry_descriptor_to_bytes_zero_means_highest(self):
+        """Test that 0 for to_entry and to_selected_value means highest value."""
+        ed = EntryDescriptor(
+            from_entry=1,
+            to_entry=0,  # 0 means highest possible
+            from_selected_value=1,
+            to_selected_value=0,  # 0 means highest possible
+        )
+
+        expected = (
+            b"\x02\x04"
+            b"\x06\x00\x00\x00\x01"
+            b"\x06\x00\x00\x00\x00"
+            b"\x12\x00\x01"
+            b"\x12\x00\x00"
+        )
+        assert ed.to_bytes() == expected
+
+    def test_entry_descriptor_from_bytes(self):
+        """Test decoding an EntryDescriptor."""
+        data = (
+            b"\x02\x04"
+            b"\x06\x00\x00\x00\x01"
+            b"\x06\x00\x00\x00\x0A"
+            b"\x12\x00\x01"
+            b"\x12\x00\x05"
+        )
+
+        ed = EntryDescriptor.from_bytes(data)
+
+        assert ed.from_entry == 1
+        assert ed.to_entry == 10
+        assert ed.from_selected_value == 1
+        assert ed.to_selected_value == 5
+
+    def test_entry_descriptor_encode_decode_roundtrip(self):
+        """Test encoding and decoding an EntryDescriptor produces the same data."""
+        original = EntryDescriptor(
+            from_entry=5,
+            to_entry=100,
+            from_selected_value=2,
+            to_selected_value=8,
+        )
+
+        encoded = original.to_bytes()
+        decoded = EntryDescriptor.from_bytes(encoded)
+
+        assert decoded.from_entry == original.from_entry
+        assert decoded.to_entry == original.to_entry
+        assert decoded.from_selected_value == original.from_selected_value
+        assert decoded.to_selected_value == original.to_selected_value
+
+    def test_entry_descriptor_invalid_access_descriptor(self):
+        """Test that invalid access descriptor raises ValueError."""
+        # Use access_descriptor = 1 (RangeDescriptor) instead of 2
+        invalid_data = b"\x01\x04\x06\x00\x00\x00\x01\x06\x00\x00\x00\x0A\x12\x00\x01\x12\x00\x05"
+
+        with pytest.raises(ValueError, match="is not valid for EntryDescriptor"):
+            EntryDescriptor.from_bytes(invalid_data)
+
+    def test_entry_descriptor_factory(self):
+        """Test AccessDescriptorFactory with EntryDescriptor."""
+        from dlms_cosem.cosem.selective_access import AccessDescriptorFactory
+
+        data = (
+            b"\x02\x04"
+            b"\x06\x00\x00\x00\x01"
+            b"\x06\x00\x00\x00\x0A"
+            b"\x12\x00\x01"
+            b"\x12\x00\x05"
+        )
+
+        descriptor = AccessDescriptorFactory.from_bytes(data)
+
+        assert isinstance(descriptor, EntryDescriptor)
+        assert descriptor.from_entry == 1
+        assert descriptor.to_entry == 10
+        assert descriptor.from_selected_value == 1
+        assert descriptor.to_selected_value == 5

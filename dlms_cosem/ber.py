@@ -2,7 +2,6 @@ from typing import *
 
 
 class BER:
-
     """
     BER encoding consists of a TAG ID, Length and data
     Simple implementation that calculates the lenght.

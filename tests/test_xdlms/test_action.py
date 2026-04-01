@@ -52,6 +52,107 @@ class TestActionRequestNormal:
             xdlms.ActionRequestNormal.from_bytes(data)
 
 
+class TestActionRequestWithFirstPblock:
+    def test_encode_decode(self):
+        """Test encoding and decoding ActionRequestWithFirstPblock."""
+        request = xdlms.ActionRequestWithFirstPblock(
+            cosem_method=cosem.CosemMethod(
+                interface=enumerations.CosemInterface.ASSOCIATION_LN,
+                instance=cosem.Obis(a=0, b=0, c=40, d=0, e=0, f=255),
+                method=1,
+            ),
+            invoke_id_and_priority=xdlms.InvokeIdAndPriority(invoke_id=1),
+            last_block=False,
+            block_number=0,
+            data_block=b"FirstBlockData",
+        )
+        encoded = request.to_bytes()
+        decoded = xdlms.ActionRequestWithFirstPblock.from_bytes(encoded)
+        assert decoded.data_block == b"FirstBlockData"
+        assert decoded.block_number == 0
+        assert not decoded.last_block
+
+    def test_last_block(self):
+        """Test encoding a last block."""
+        request = xdlms.ActionRequestWithFirstPblock(
+            cosem_method=cosem.CosemMethod(
+                interface=enumerations.CosemInterface.ASSOCIATION_LN,
+                instance=cosem.Obis(a=0, b=0, c=40, d=0, e=0, f=255),
+                method=1,
+            ),
+            invoke_id_and_priority=xdlms.InvokeIdAndPriority(invoke_id=1),
+            last_block=True,
+            block_number=2,
+            data_block=b"LastBlockData",
+        )
+        encoded = request.to_bytes()
+        decoded = xdlms.ActionRequestWithFirstPblock.from_bytes(encoded)
+        assert decoded.last_block
+        assert decoded.block_number == 2
+
+
+class TestActionRequestNextPblock:
+    def test_encode_decode(self):
+        """Test encoding and decoding ActionRequestNextPblock."""
+        request = xdlms.ActionRequestNextPblock(
+            invoke_id_and_priority=xdlms.InvokeIdAndPriority(invoke_id=2),
+            block_number=5,
+        )
+        encoded = request.to_bytes()
+        decoded = xdlms.ActionRequestNextPblock.from_bytes(encoded)
+        assert decoded.block_number == 5
+
+
+class TestActionRequestWithList:
+    def test_encode_decode(self):
+        """Test encoding and decoding ActionRequestWithList."""
+        methods = [
+            cosem.CosemMethod(
+                interface=enumerations.CosemInterface.ASSOCIATION_LN,
+                instance=cosem.Obis(a=0, b=0, c=40, d=0, e=0, f=1),
+                method=1,
+            ),
+            cosem.CosemMethod(
+                interface=enumerations.CosemInterface.ASSOCIATION_LN,
+                instance=cosem.Obis(a=0, b=0, c=40, d=0, e=0, f=2),
+                method=1,
+            ),
+        ]
+
+        request = xdlms.ActionRequestWithList(
+            method_list=methods,
+            invoke_id_and_priority=xdlms.InvokeIdAndPriority(invoke_id=1),
+        )
+        encoded = request.to_bytes()
+        decoded = xdlms.ActionRequestWithList.from_bytes(encoded)
+        assert len(decoded.method_list) == 2
+        assert decoded.method_list[0].instance.f == 1
+
+
+class TestActionRequestWithListAndFirstPblock:
+    def test_encode_decode(self):
+        """Test encoding and decoding ActionRequestWithListAndFirstPblock."""
+        methods = [
+            cosem.CosemMethod(
+                interface=enumerations.CosemInterface.ASSOCIATION_LN,
+                instance=cosem.Obis(a=0, b=0, c=40, d=0, e=0, f=1),
+                method=1,
+            ),
+        ]
+
+        request = xdlms.ActionRequestWithListAndFirstPblock(
+            method_list=methods,
+            invoke_id_and_priority=xdlms.InvokeIdAndPriority(invoke_id=1),
+            last_block=False,
+            block_number=0,
+            data_block=b"Block1Data",
+        )
+        encoded = request.to_bytes()
+        decoded = xdlms.ActionRequestWithListAndFirstPblock.from_bytes(encoded)
+        assert len(decoded.method_list) == 1
+        assert decoded.data_block == b"Block1Data"
+
+
 class TestActionRequestFactory:
     def test_normal_with_data(self):
         data = b'\xc3\x01\xc0\x00\x0f\x00\x00(\x00\x00\xff\x01\x01\t\x11\x10\x00\x00\x1a\x90\xe6\xd2"\x1f\xa2\xfd\x85\xee\xd6\x1a\xcc"'
@@ -69,10 +170,49 @@ class TestActionRequestFactory:
         with pytest.raises(ValueError):
             xdlms.ActionRequestFactory.from_bytes(data)
 
-    def test_any_other_type_than_normal_raises_notimplementederror(self):
-        data = b"\xc3\x02\xc0\x00\x0f\x00\x00(\x00\x00\xff\x01\x00"
-        with pytest.raises(NotImplementedError):
-            xdlms.ActionRequestFactory.from_bytes(data)
+    def test_request_with_first_pblock(self):
+        """Test parsing ActionRequestWithFirstPblock."""
+        request = xdlms.ActionRequestWithFirstPblock(
+            cosem_method=cosem.CosemMethod(
+                interface=enumerations.CosemInterface.ASSOCIATION_LN,
+                instance=cosem.Obis(a=0, b=0, c=40, d=0, e=0, f=255),
+                method=1,
+            ),
+            invoke_id_and_priority=xdlms.InvokeIdAndPriority(invoke_id=1),
+            last_block=False,
+            block_number=0,
+            data_block=b"BlockData",
+        )
+        encoded = request.to_bytes()
+        decoded = xdlms.ActionRequestFactory.from_bytes(encoded)
+        assert isinstance(decoded, xdlms.ActionRequestWithFirstPblock)
+
+    def test_request_next_pblock(self):
+        """Test parsing ActionRequestNextPblock."""
+        request = xdlms.ActionRequestNextPblock(
+            invoke_id_and_priority=xdlms.InvokeIdAndPriority(invoke_id=2),
+            block_number=3,
+        )
+        encoded = request.to_bytes()
+        decoded = xdlms.ActionRequestFactory.from_bytes(encoded)
+        assert isinstance(decoded, xdlms.ActionRequestNextPblock)
+        assert decoded.block_number == 3
+
+    def test_request_with_list(self):
+        """Test parsing ActionRequestWithList."""
+        request = xdlms.ActionRequestWithList(
+            method_list=[
+                cosem.CosemMethod(
+                    interface=enumerations.CosemInterface.ASSOCIATION_LN,
+                    instance=cosem.Obis(a=0, b=0, c=40, d=0, e=0, f=1),
+                    method=1,
+                ),
+            ],
+            invoke_id_and_priority=xdlms.InvokeIdAndPriority(invoke_id=1),
+        )
+        encoded = request.to_bytes()
+        decoded = xdlms.ActionRequestFactory.from_bytes(encoded)
+        assert isinstance(decoded, xdlms.ActionRequestWithList)
 
 
 class TestActionResponseNormal:
@@ -173,6 +313,63 @@ class TestActionResponseWithError:
             xdlms.ActionResponseNormalWithError.from_bytes(data)
 
 
+class TestActionResponseWithPblock:
+    def test_encode_decode(self):
+        """Test encoding and decoding ActionResponseWithPblock."""
+        response = xdlms.ActionResponseWithPblock(
+            invoke_id_and_priority=xdlms.InvokeIdAndPriority(invoke_id=1),
+            last_block=False,
+            block_number=2,
+            data_block=b"BlockData",
+        )
+        encoded = response.to_bytes()
+        decoded = xdlms.ActionResponseWithPblock.from_bytes(encoded)
+        assert decoded.data_block == b"BlockData"
+        assert decoded.block_number == 2
+
+    def test_last_block(self):
+        """Test encoding a last block response."""
+        response = xdlms.ActionResponseWithPblock(
+            invoke_id_and_priority=xdlms.InvokeIdAndPriority(invoke_id=1),
+            last_block=True,
+            block_number=5,
+            data_block=b"LastBlockData",
+        )
+        encoded = response.to_bytes()
+        decoded = xdlms.ActionResponseWithPblock.from_bytes(encoded)
+        assert decoded.last_block
+        assert decoded.block_number == 5
+
+
+class TestActionResponseNextPblock:
+    def test_encode_decode(self):
+        """Test encoding and decoding ActionResponseNextPblock."""
+        response = xdlms.ActionResponseNextPblock(
+            invoke_id_and_priority=xdlms.InvokeIdAndPriority(invoke_id=1),
+            last_block=True,
+            block_number=10,
+            data_block=b"LastBlock",
+        )
+        encoded = response.to_bytes()
+        decoded = xdlms.ActionResponseNextPblock.from_bytes(encoded)
+        assert decoded.last_block
+        assert decoded.block_number == 10
+
+
+class TestActionResponseLastPblock:
+    def test_encode_decode(self):
+        """Test encoding and decoding ActionResponseLastPblock."""
+        response = xdlms.ActionResponseLastPblock(
+            invoke_id_and_priority=xdlms.InvokeIdAndPriority(invoke_id=1),
+            block_number=15,
+            data_block=b"ResponseData",
+        )
+        encoded = response.to_bytes()
+        decoded = xdlms.ActionResponseLastPblock.from_bytes(encoded)
+        assert decoded.last_block
+        assert decoded.block_number == 15
+
+
 class TestActionResponseFactory:
     def test_parse_action_response_normal(self):
         data = b"\xc7\x01\xc0\x00\x00"
@@ -194,7 +391,26 @@ class TestActionResponseFactory:
         with pytest.raises(ValueError):
             xdlms.ActionResponseFactory.from_bytes(data)
 
-    def test_type_other_than_normal_raises_not_implemented_error(self):
-        data = b"\xc7\x02\xc0\x00\x01\x01\xfa"
-        with pytest.raises(NotImplementedError):
-            xdlms.ActionResponseFactory.from_bytes(data)
+    def test_response_with_pblock(self):
+        """Test parsing ActionResponseWithPblock."""
+        response = xdlms.ActionResponseWithPblock(
+            invoke_id_and_priority=xdlms.InvokeIdAndPriority(invoke_id=1),
+            last_block=False,
+            block_number=3,
+            data_block=b"Data",
+        )
+        encoded = response.to_bytes()
+        decoded = xdlms.ActionResponseFactory.from_bytes(encoded)
+        assert isinstance(decoded, xdlms.ActionResponseWithPblock)
+
+    def test_response_next_pblock(self):
+        """Test parsing ActionResponseNextPblock."""
+        response = xdlms.ActionResponseNextPblock(
+            invoke_id_and_priority=xdlms.InvokeIdAndPriority(invoke_id=1),
+            last_block=False,
+            block_number=7,
+            data_block=b"MoreData",
+        )
+        encoded = response.to_bytes()
+        decoded = xdlms.ActionResponseFactory.from_bytes(encoded)
+        assert isinstance(decoded, xdlms.ActionResponseNextPblock)

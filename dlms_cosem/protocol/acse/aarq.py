@@ -263,9 +263,9 @@ class ApplicationAssociationRequest:
         if not application_context_name.logical_name_refs:
             raise ValueError("Parsed a AARQ that uses Short Name Referencing!")
 
-        sender_acse_requirements: Optional[
-            acse_base.AuthFunctionalUnit
-        ] = object_dict.pop("sender_acse_requirements", None)
+        sender_acse_requirements: Optional[acse_base.AuthFunctionalUnit] = (
+            object_dict.pop("sender_acse_requirements", None)
+        )
 
         mechanism_name: Optional[acse_base.MechanismName] = object_dict.pop(
             "mechanism_name", None

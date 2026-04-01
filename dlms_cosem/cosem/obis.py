@@ -17,7 +17,6 @@ def allowed_range_for_obis_code(instance, attribute, value: int):
 
 @attr.s(auto_attribs=True)
 class Obis:
-
     """
     OBject Identification System defines codes for identification of commonly used
     data items in metering equipment.

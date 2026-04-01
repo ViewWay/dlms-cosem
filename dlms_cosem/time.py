@@ -129,7 +129,6 @@ def get_optional_value(
 
 
 def date_from_bytes(source_bytes: bytes) -> date:
-
     """
     Date is represented by 5 bytes.
     [year highbyte, year lowbyte, month, day of month, day of week
@@ -289,7 +288,7 @@ def datetime_from_bytes(source_bytes: bytes) -> Tuple[datetime, Optional[ClockSt
 
 
 def date_to_bytes(d: date) -> bytes:
-    """Will set day of week to unspecified. """
+    """Will set day of week to unspecified."""
 
     year = d.year
     month = d.month

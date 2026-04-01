@@ -43,3 +43,40 @@ class NoRlrqRlreError(Exception):
     Is raised from connection when a ReleaseRequest is issued on a connection that has use_rlrq_rlre==False
     Control for client to just skip Release and disconnect the lower layer.
     """
+
+
+# Security Suite Validation Exceptions
+
+
+class SecuritySuiteError(Exception):
+    """Base exception for Security Suite validation errors"""
+
+
+class InvalidSecuritySuiteError(SecuritySuiteError):
+    """
+    Raised when an invalid security suite number is provided.
+
+    Valid security suite numbers are 0, 1, or 2 according to DLMS/COSEM
+    Yellow Book specification.
+    """
+
+
+class KeyLengthError(SecuritySuiteError):
+    """
+    Raised when a key has an incorrect length for the specified security suite.
+
+    Security Suite 0: Requires 16-byte keys (AES-128)
+    Security Suite 1: Requires 16-byte keys (AES-128)
+    Security Suite 2: Requires 32-byte keys (AES-256)
+    """
+
+
+class InvalidSecurityConfigurationError(SecuritySuiteError):
+    """
+    Raised when the security configuration is invalid or inconsistent.
+
+    This can occur when:
+    - Security control fields are inconsistent
+    - Required security parameters are missing
+    - Authentication and encryption settings conflict
+    """

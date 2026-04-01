@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__web-search-prime__web_search_prime",
+      "Bash(uv run:*)",
+      "Bash(uv sync:*)",
+      "Bash(uvx pre-commit:*)",
+      "Bash(uv pip:*)",
+      "Bash(python3:*)",
+      "Bash(chmod +x:*)",
+      "Bash(/Users/yimiliya/.openclaw/workspace/dlms-cosem/scripts/dlms-keys generate:*)",
+      "Read(//tmp/**)",
+      "Bash(/Users/yimiliya/.openclaw/workspace/dlms-cosem/scripts/dlms-keys show:*)",
+      "Bash(/Users/yimiliya/.openclaw/workspace/dlms-cosem/scripts/dlms-keys validate:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

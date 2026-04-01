@@ -12,7 +12,6 @@ from dlms_cosem.protocol.acse.user_information import UserInformation
 
 @attr.s(auto_attribs=True)
 class Asn1Integer:
-
     """
     Simple class to wrap Integers for BER encoding.
     Does not handle integers larger than 128 yet
@@ -255,20 +254,20 @@ class ApplicationAssociationResponse(acse_base.AbstractAcseApdu):
         source_diagnostic = object_dict["result_source_diagnostics"]
 
         if source_diagnostic.name == "acse-service-user":
-            object_dict[
-                "result_source_diagnostics"
-            ] = enumerations.AcseServiceUserDiagnostics(source_diagnostic.native)
+            object_dict["result_source_diagnostics"] = (
+                enumerations.AcseServiceUserDiagnostics(source_diagnostic.native)
+            )
         elif source_diagnostic.name == "acse-service-provider":
-            object_dict[
-                "result_source_diagnostics"
-            ] = enumerations.AcseServiceProviderDiagnostics(source_diagnostic.native)
+            object_dict["result_source_diagnostics"] = (
+                enumerations.AcseServiceProviderDiagnostics(source_diagnostic.native)
+            )
 
         else:
             raise ValueError("Not a valid choice of result_source_diagnostics")
 
-        responder_acse_requirements: Optional[
-            acse_base.AuthFunctionalUnit
-        ] = object_dict.pop("responder_acse_requirements", None)
+        responder_acse_requirements: Optional[acse_base.AuthFunctionalUnit] = (
+            object_dict.pop("responder_acse_requirements", None)
+        )
 
         mechanism_name: Optional[acse_base.MechanismName] = object_dict.pop(
             "mechanism_name", None

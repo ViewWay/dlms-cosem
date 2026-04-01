@@ -61,9 +61,9 @@ def convert_load_profile(instance, data):
 
 @attr.s(auto_attribs=True)
 class ProfileGeneric:
-    INTERFACE_CLASS_ID: ClassVar[
-        enums.CosemInterface
-    ] = enums.CosemInterface.PROFILE_GENERIC
+    INTERFACE_CLASS_ID: ClassVar[enums.CosemInterface] = (
+        enums.CosemInterface.PROFILE_GENERIC
+    )
 
     logical_name: cosem.Obis
     buffer = List[List[Any]]

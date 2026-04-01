@@ -6,12 +6,12 @@ import attr
 import structlog
 
 from dlms_cosem import cosem, dlms_data, enumerations, exceptions, state, utils
-from dlms_cosem.security import AuthenticationMethodManager
-from dlms_cosem.io import DlmsTransport
 from dlms_cosem.connection import DlmsConnection, DlmsConnectionSettings
 from dlms_cosem.cosem.selective_access import RangeDescriptor
+from dlms_cosem.io import DlmsTransport
 from dlms_cosem.protocol import acse, xdlms
 from dlms_cosem.protocol.xdlms import ConfirmedServiceError
+from dlms_cosem.security import AuthenticationMethodManager
 
 LOG = structlog.get_logger()
 

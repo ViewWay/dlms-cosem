@@ -37,7 +37,9 @@ class TestDlmsClient:
 
 class TestDlmsClientWithConnectionSettings:
     def test_can_get_settings_from_client(self):
-        settings = DlmsConnectionSettings(empty_system_title_in_general_glo_ciphering=True)
+        settings = DlmsConnectionSettings(
+            empty_system_title_in_general_glo_ciphering=True
+        )
 
         transport = IPTransport(
             io=BlockingTcpIO(host="localhost", port=4059),
@@ -52,4 +54,6 @@ class TestDlmsClientWithConnectionSettings:
             connection_settings=settings,
         )
 
-        assert client.dlms_connection.settings.empty_system_title_in_general_glo_ciphering
+        assert (
+            client.dlms_connection.settings.empty_system_title_in_general_glo_ciphering
+        )

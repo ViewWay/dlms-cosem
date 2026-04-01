@@ -201,12 +201,11 @@ class UnNumberedAcknowledgmentFrame(BaseHdlcFrame):
             fixed = self.fixed_length_bytes - 2
 
         return (
-                fixed
-                + self.destination_address.length
-                + self.source_address.length
-                + len(self.information)
+            fixed
+            + self.destination_address.length
+            + self.source_address.length
+            + len(self.information)
         )
-
 
     @property
     def information(self) -> bytes:
@@ -264,7 +263,8 @@ class UnNumberedAcknowledgmentFrame(BaseHdlcFrame):
             "Some frames might not have hcs so we should not check it."
             if hcs != frame.hcs:
                 raise hdlc_exceptions.HdlcParsingError(
-                    f"HCS is not correct. " f"Calculated: {frame.hcs!r}, in data: {hcs!r}"
+                    f"HCS is not correct. "
+                    f"Calculated: {frame.hcs!r}, in data: {hcs!r}"
                 )
 
         if fcs != frame.fcs:

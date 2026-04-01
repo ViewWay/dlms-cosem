@@ -45,6 +45,13 @@ dependencies = [
 [project.optional-dependencies]
 docs = ["mkdocs", "mkdocs-material"]
 test = ["pytest", "pytest-cov", "pytest-sugar"]
+
+# Key management optional dependencies
+keyring = ["keyring"]
+yaml = ["pyyaml"]
+toml = ["tomli", "tomli-w"]
+keys = ["dlms-cosem[keyring,yaml,toml]"]
+
 dev = [
   "pre-commit",
   "mkdocs",
@@ -52,6 +59,10 @@ dev = [
   "pytest",
   "pytest-cov",
   "pytest-sugar",
+  # Key management dependencies for development
+  "pyyaml",
+  "tomli",
+  "tomli-w",
 ]
 
 [project.urls]

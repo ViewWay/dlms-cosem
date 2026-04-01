@@ -5,7 +5,7 @@ import sys
 import time
 from typing import Optional, Tuple
 
-from dlms_cosem.hdlc import connection, address, state, frames
+from dlms_cosem.hdlc import address, connection, frames, state
 from dlms_cosem.protocol.wrappers import WrapperHeader, WrapperProtocolDataUnit
 
 if sys.version_info < (3, 8):
@@ -13,14 +13,13 @@ if sys.version_info < (3, 8):
 else:
     from typing import Protocol
 
-import attr
-import serial
-
-from dlms_cosem import exceptions
-
 from typing import *
 
+import attr
+import serial
 import structlog
+
+from dlms_cosem import exceptions
 
 if TYPE_CHECKING:
     pass

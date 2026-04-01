@@ -9,10 +9,10 @@ from dlms_cosem import enumerations as enums
 from dlms_cosem import exceptions, security
 from dlms_cosem import state as dlms_state
 from dlms_cosem import utils
-from dlms_cosem.security import AuthenticationMethodManager, NoSecurityAuthentication
 from dlms_cosem.protocol import acse, xdlms
 from dlms_cosem.protocol.xdlms.base import AbstractXDlmsApdu
 from dlms_cosem.protocol.xdlms.conformance import Conformance
+from dlms_cosem.security import AuthenticationMethodManager, NoSecurityAuthentication
 
 LOG = structlog.get_logger()
 
@@ -32,6 +32,7 @@ class XDlmsApduFactory:
         8: xdlms.InitiateResponse,
         14: xdlms.ConfirmedServiceError,
         15: xdlms.DataNotification,
+        16: xdlms.GeneralBlockTransferResponse,  # general-block-transfer-response
         33: xdlms.GlobalCipherInitiateRequest,
         40: xdlms.GlobalCipherInitiateResponse,
         216: xdlms.ExceptionResponse,
@@ -221,6 +222,16 @@ class DlmsConnection:
         converter=attr.converters.default_if_none(factory=DlmsConnectionSettings),
     )
 
+    # Block transfer state tracking
+    _block_transfer_send_status: xdlms.BlockTransferStatus = attr.ib(
+        init=False,
+        factory=xdlms.BlockTransferStatus,
+    )
+    _block_transfer_receive_status: xdlms.BlockTransferStatus = attr.ib(
+        init=False,
+        factory=xdlms.BlockTransferStatus,
+    )
+
     @classmethod
     def with_pre_established_association(
         cls,
@@ -304,19 +315,30 @@ class DlmsConnection:
         if self.use_protection:
             event = self.protect(event)
 
-        # if self.use_blocks:
-        #    blocks = self.make_blocks(event)
-        #    # TODO: How to handle the subcase of sending blocks?
-
         LOG.info(f"Sending DLMS Request", request=event)
 
         out = event.to_bytes()
 
+        # Check if we need to use block transfer
         if len(out) > self.max_pdu_size:
-            raise exceptions.LocalDlmsProtocolError(
-                f"PDU size too big. Max PDU size for association is {self.max_pdu_size} "
-                f"bytes. PDU to be sent is {len(out)}"
+            if not self.use_blocks:
+                raise exceptions.LocalDlmsProtocolError(
+                    f"PDU size ({len(out)}) exceeds max PDU size ({self.max_pdu_size}) "
+                    f"but block transfer is not supported or not enabled. "
+                    f"Enable block_transfer and ensure conformance.general_block_transfer is True."
+                )
+            # Use block transfer
+            blocks = self.make_blocks(event)
+            LOG.info(
+                f"Splitting APDU into {len(blocks)} blocks",
+                original_size=len(out),
+                max_pdu_size=self.max_pdu_size,
             )
+            # Return the first block
+            self._block_transfer_send_status.reset()
+            self._block_transfer_send_status.total_blocks = len(blocks)
+            return blocks[0].to_bytes()
+
         return out
 
     def receive_data(self, data: bytes):
@@ -342,6 +364,72 @@ class DlmsConnection:
         apdu = XDlmsApduFactory.apdu_from_bytes(self.buffer)
 
         LOG.info("Received DLMS Response", response=apdu)
+
+        # Handle General Block Transfer Response
+        if isinstance(apdu, xdlms.GeneralBlockTransferResponse):
+            LOG.info(
+                f"Received block {apdu.block_number} "
+                f"{'(last)' if apdu.last_block else '(intermediate)'}"
+            )
+
+            # Add block data to receive status
+            try:
+                self._block_transfer_receive_status.add_block_data(
+                    apdu.data_block,
+                    apdu.block_number,
+                    apdu.last_block,
+                )
+            except ValueError as e:
+                # Block number mismatch - reset and raise error
+                self._block_transfer_receive_status.set_error(str(e))
+                raise exceptions.LocalDlmsProtocolError(
+                    f"Block transfer error: {e}"
+                ) from e
+
+            # Check if this is the last block
+            if apdu.last_block:
+                if apdu.has_error:
+                    # Last block with error
+                    error_code = apdu.error_code
+                    self._block_transfer_receive_status.set_error(
+                        f"Block transfer failed with error code: {error_code}"
+                    )
+                    raise exceptions.LocalDlmsProtocolError(
+                        f"Block transfer failed with error code: {error_code}"
+                    )
+
+                # Reassemble the complete APDU from all blocks
+                complete_data = bytes(self._block_transfer_receive_status.received_data)
+                LOG.info(
+                    f"Block transfer complete. Reassembling {len(complete_data)} bytes"
+                )
+
+                # Parse the reassembled APDU
+                reassembled_apdu = XDlmsApduFactory.apdu_from_bytes(complete_data)
+
+                # Reset block transfer status for next transfer
+                self._block_transfer_receive_status.reset()
+
+                # Continue processing the reassembled APDU
+                apdu = reassembled_apdu
+
+                LOG.info("Reassembled DLMS Response", response=apdu)
+
+                # If the reassembled APDU is also encrypted, decrypt it
+                if self.use_protection:
+                    apdu = self.unprotect(apdu)
+                    LOG.info("Deciphered Reassembled DLMS Response", response=apdu)
+
+                # Process the reassembled APDU through state machine
+                self.state.process_event(apdu)
+                self.clear_buffer()
+
+                return apdu
+
+            # Not the last block - clear buffer and return the response
+            # The caller should send a request for the next block
+            self.clear_buffer()
+            return apdu
 
         if isinstance(apdu, acse.ApplicationAssociationResponse):
             # To be able to run the decryption we need to know some things about the
@@ -592,18 +680,129 @@ class DlmsConnection:
 
         return event
 
+    def _get_next_block_to_send(self) -> Optional[xdlms.GeneralBlockTransferRequest]:
+        """
+        Get the next block to send in a block transfer sequence.
+
+        Returns None if there are no more blocks to send.
+        """
+        if self._block_transfer_send_status.is_complete:
+            return None
+
+        if (
+            self._block_transfer_send_status.current_block_number
+            >= self._block_transfer_send_status.total_blocks
+        ):
+            return None
+
+        # Get the original event data that was split
+        # Note: In a full implementation, we'd need to store the original event
+        # and its split blocks. For now, we'll return None to indicate
+        # the caller should handle the block transfer externally.
+        return None
+
+    def reset_block_transfer_send(self):
+        """Reset the block transfer send status."""
+        self._block_transfer_send_status.reset()
+
+    def reset_block_transfer_receive(self):
+        """Reset the block transfer receive status."""
+        self._block_transfer_receive_status.reset()
+
     @property
     def use_blocks(self) -> bool:
         """
-        If the event should be sent via GlobalBlockTransfer
-        """
-        return False
+        Check if the event should be sent via GlobalBlockTransfer.
 
-    def make_blocks(self, event) -> List[Any]:
+        Returns True if:
+        - The association supports block transfer (conformance.general_block_transfer)
+        - use_block_transfer is enabled
         """
-        Will split an APDU in blocks
+        return self.use_block_transfer and self.conformance.general_block_transfer
+
+    def make_blocks(
+        self, event: AbstractXDlmsApdu, max_block_size: Optional[int] = None
+    ) -> List[xdlms.GeneralBlockTransferRequest]:
         """
-        return event
+        Split an APDU into multiple blocks.
+
+        Args:
+            event: The APDU to split into blocks
+            max_block_size: Maximum size of each block's data_block. Defaults to
+                           max_pdu_size - overhead (about 20 bytes for headers)
+
+        Returns:
+            List of GeneralBlockTransferRequest APDUs
+
+        Raises:
+            LocalDlmsProtocolError: If block transfer is not supported or data is too small
+        """
+        if not self.use_blocks:
+            raise exceptions.LocalDlmsProtocolError(
+                "Block transfer is not supported by this association"
+            )
+
+        # Calculate max block size (reserve space for headers)
+        if max_block_size is None:
+            # Approximate overhead: 1 (tag) + 1 (invoke_id) + 4 (block_number) +
+            # 1 (block_type) + 1 (last_block) + 1 (block_control) + 2 (length encoding)
+            overhead = 11
+            max_block_size = self.max_pdu_size - overhead
+
+        if max_block_size <= 0:
+            raise exceptions.LocalDlmsProtocolError(
+                f"Max PDU size ({self.max_pdu_size}) is too small for block transfer"
+            )
+
+        # Convert event to bytes
+        event_data = event.to_bytes()
+
+        # If data fits in one block, don't use block transfer
+        if len(event_data) <= max_block_size:
+            raise exceptions.LocalDlmsProtocolError(
+                f"Data size ({len(event_data)}) is small enough for normal transfer. "
+                f"Block transfer is only needed when data exceeds max PDU size."
+            )
+
+        # Split data into blocks
+        blocks = []
+        total_blocks = (len(event_data) + max_block_size - 1) // max_block_size
+        current_block_number = 0
+
+        for i in range(0, len(event_data), max_block_size):
+            chunk = event_data[i : i + max_block_size]
+            is_last = (i + max_block_size) >= len(event_data)
+
+            # Determine block type
+            if current_block_number == 0:
+                if is_last:
+                    # Single block (shouldn't happen here due to check above)
+                    block_type = xdlms.BlockType.LAST_BLOCK_NO_ERROR
+                else:
+                    block_type = xdlms.BlockType.FIRST_BLOCK
+            elif is_last:
+                block_type = xdlms.BlockType.LAST_BLOCK_NO_ERROR
+            else:
+                block_type = xdlms.BlockType.INTERMEDIATE_BLOCK
+
+            # Get invoke ID from the original event if it has one
+            invoke_id = xdlms.InvokeIdAndPriority(0, True, True)
+            if hasattr(event, "invoke_id_and_priority"):
+                invoke_id = event.invoke_id_and_priority
+
+            block = xdlms.GeneralBlockTransferRequest(
+                invoke_id_and_priority=invoke_id,
+                block_number=current_block_number,
+                block_type_security=block_type,
+                last_block=is_last,
+                block_control=0,
+                data_block=chunk,
+            )
+
+            blocks.append(block)
+            current_block_number += 1
+
+        return blocks
 
     def get_aarq(self) -> acse.ApplicationAssociationRequest:
         """

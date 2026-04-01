@@ -35,7 +35,7 @@ class SnrmControlField(_AbstractHdlcControlField):
     """
 
     def is_final(self):
-        """ 'Almost' all the time a SNRM frame is contaned in single frame."""
+        """'Almost' all the time a SNRM frame is contaned in single frame."""
         # TODO: Handle multi frame
         return True
 

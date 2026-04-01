@@ -2,8 +2,8 @@ import socket
 
 import pytest
 
-from dlms_cosem.io import BlockingTcpIO, IPTransport, TcpTransport
 from dlms_cosem.exceptions import CommunicationError
+from dlms_cosem.io import BlockingTcpIO, IPTransport, TcpTransport
 
 
 class TestBlockingTcpTransport:

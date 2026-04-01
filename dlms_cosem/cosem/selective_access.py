@@ -133,15 +133,82 @@ class EntryDescriptor:
 
     @classmethod
     def from_bytes(cls, source_bytes) -> "EntryDescriptor":
-        raise NotImplementedError()
+        """
+        Decode bytes into an EntryDescriptor.
+
+        EntryDescriptor encoding:
+        - access_descriptor (1 byte) = 0x02
+        - structure length (1 byte) = 0x04 (4 elements)
+        - from_entry (Unsigned32)
+        - to_entry (Unsigned32)
+        - from_selected_value (Unsigned16)
+        - to_selected_value (Unsigned16)
+        """
+        data = bytearray(source_bytes)
+
+        # Access descriptor type
+        access_descriptor = data.pop(0)
+        if access_descriptor != cls.ACCESS_DESCRIPTOR:
+            raise ValueError(
+                f"Access descriptor {access_descriptor} is not valid for "
+                f"EntryDescriptor. It should be {cls.ACCESS_DESCRIPTOR}"
+            )
+
+        # Structure should have 4 elements
+        structure_length = data.pop(0)
+        if structure_length != 4:
+            raise ValueError(
+                f"EntryDescriptor structure should have 4 elements, got {structure_length}"
+            )
+
+        # Parse each element using DLMS data parsing
+        parsed_data = utils.parse_as_dlms_data(data)
+
+        from_entry = parsed_data[0]
+        to_entry = parsed_data[1]
+        from_selected_value = parsed_data[2]
+        to_selected_value = parsed_data[3]
+
+        return cls(
+            from_entry=from_entry,
+            to_entry=to_entry,
+            from_selected_value=from_selected_value,
+            to_selected_value=to_selected_value,
+        )
 
     def to_bytes(self) -> bytes:
-        raise NotImplementedError()
+        """
+        Encode the EntryDescriptor to bytes.
+
+        EntryDescriptor encoding uses DLMS data encoding:
+        - access_descriptor (1 byte) = 0x02
+        - structure length (1 byte) = 0x04 (4 elements)
+        - from_entry (DoubleLongUnsignedData - TAG 0x06)
+        - to_entry (DoubleLongUnsignedData - TAG 0x06)
+        - from_selected_value (UnsignedLongData - TAG 0x12)
+        - to_selected_value (UnsignedLongData - TAG 0x12)
+        """
+        out = bytearray()
+        out.append(self.ACCESS_DESCRIPTOR)
+        out.append(0x04)  # structure of 4 elements
+
+        # from_entry (DoubleLongUnsignedData)
+        out.extend(dlms_data.DoubleLongUnsignedData(self.from_entry).to_bytes())
+
+        # to_entry (DoubleLongUnsignedData)
+        out.extend(dlms_data.DoubleLongUnsignedData(self.to_entry).to_bytes())
+
+        # from_selected_value (UnsignedLongData)
+        out.extend(dlms_data.UnsignedLongData(self.from_selected_value).to_bytes())
+
+        # to_selected_value (UnsignedLongData)
+        out.extend(dlms_data.UnsignedLongData(self.to_selected_value).to_bytes())
+
+        return bytes(out)
 
 
 @attr.s(auto_attribs=True)
 class AccessDescriptorFactory:
-
     """
     Handles the selection of parsing the first byte to find what kind of access
     descriptor it is and returns the object.

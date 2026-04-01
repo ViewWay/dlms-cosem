@@ -24,6 +24,46 @@ Or with pip:
 pip install dlms-cosem
 ```
 
+# Key Management
+
+The library includes comprehensive key management utilities for DLMS/COSEM security:
+
+## Quick Start
+
+```python
+from dlms_cosem.key_management import KeyManager
+
+# Generate new keys
+profile = KeyManager.generate(suite=0, name="my_meter")
+KeyManager.save(profile, "keys.toml")
+
+# Load configuration (auto-detects from env vars or files)
+profile = KeyManager.load()
+```
+
+## CLI Tool
+
+```bash
+# Generate keys
+dlms-keys generate --suite 0 --output keys.toml
+
+# Validate configuration
+dlms-keys validate --file keys.toml
+
+# Rotate keys
+dlms-keys rotate --file keys.toml --keep-backup
+```
+
+## Installation with Key Management
+
+For full key management features (TOML/YAML config files):
+
+```bash
+uv add dlms-cosem[keys]
+```
+
+See [docs/key_management.md](docs/key_management.md) for detailed documentation.
+
 # Documentation
 
 Full documentation can be found at [www.dlms.dev](https://www.dlms.dev)

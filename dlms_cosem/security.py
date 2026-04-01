@@ -1,8 +1,10 @@
 from __future__ import annotations  # noqa
 
 import os
-from typing import Optional, ClassVar
-
+import sys
+from dataclasses import dataclass
+from enum import IntEnum
+from typing import TYPE_CHECKING, ClassVar, Optional
 
 import attr
 from cryptography.exceptions import InvalidTag
@@ -10,12 +12,17 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.keywrap import aes_key_unwrap, aes_key_wrap
 
 from dlms_cosem import enumerations, exceptions
+from dlms_cosem.exceptions import (
+    CipheringError,
+    DecryptionError,
+    InvalidSecurityConfigurationError,
+    InvalidSecuritySuiteError,
+    KeyLengthError,
+    SecuritySuiteError,
+)
 
-from dlms_cosem.exceptions import CipheringError, DecryptionError
-
-
-import sys
-from typing import TYPE_CHECKING
+# Import SecuritySuite from the key_management package
+from dlms_cosem.key_management.security_suite import SecuritySuite, SecuritySuiteNumber
 
 if sys.version_info < (3, 8):
     from typing_extensions import Protocol
@@ -41,6 +48,10 @@ The initialization vector is essentially a nonce. In DLMS/COSEM it is
 """
 
 TAG_LENGTH = 12
+
+
+# SecuritySuite, SecuritySuiteNumber, and _SECURITY_SUITES are now imported from
+# dlms_cosem.security.security_suite to organize the security package.
 
 
 def validate_security_suite_number(instance, attribute, value):
@@ -98,11 +109,283 @@ class SecurityControlField:
 
 
 def validate_key(suite: int, key: bytes) -> None:
-    key_lengths = {0: 16, 1: 16, 2: 32}
-    if len(key) != key_lengths[suite]:
+    """
+    Validate that a key has the correct length for the specified security suite.
+
+    Args:
+        suite: Security suite number (0, 1, or 2)
+        key: Key bytes to validate
+
+    Raises:
+        InvalidSecuritySuiteError: If suite is not valid
+        KeyLengthError: If key length is incorrect
+    """
+    security_suite = SecuritySuite.from_number(suite)
+    security_suite.validate_key(key, "key")
+
+
+def validate_key_length(suite: int, key: bytes, key_name: str = "key") -> None:
+    """
+    Validate that a key has the correct length with a custom key name.
+
+    Args:
+        suite: Security suite number (0, 1, or 2)
+        key: Key bytes to validate
+        key_name: Name of the key for error messages
+
+    Raises:
+        InvalidSecuritySuiteError: If suite is not valid
+        KeyLengthError: If key length is incorrect
+    """
+    security_suite = SecuritySuite.from_number(suite)
+    security_suite.validate_key(key, key_name)
+
+
+def validate_security_suite(suite: int) -> SecuritySuite:
+    """
+    Validate and return SecuritySuite information.
+
+    Args:
+        suite: Security suite number to validate
+
+    Returns:
+        SecuritySuite instance with suite details
+
+    Raises:
+        InvalidSecuritySuiteError: If suite is not valid (not 0, 1, or 2)
+    """
+    return SecuritySuite.from_number(suite)
+
+
+def validate_system_title(system_title: bytes) -> None:
+    """
+    Validate that a system title has the correct length.
+
+    In DLMS/COSEM, the system title must be exactly 8 bytes (64 bits).
+    The leftmost 3 octets contain the manufacturer ID, and the remaining
+    5 octets ensure uniqueness.
+
+    Args:
+        system_title: System title bytes to validate
+
+    Raises:
+        ValueError: If system_title is not exactly 8 bytes
+    """
+    if len(system_title) != 8:
         raise ValueError(
-            f"Key with length {len(key)} is not the correct length for use with "
-            f"security suite {suite}"
+            f"System title must be exactly 8 bytes (64 bits). "
+            f"Got {len(system_title)} bytes: {system_title.hex()}. "
+            f"The system title consists of: 3-byte manufacturer ID + 5-byte unique identifier."
+        )
+
+
+def validate_invocation_counter(invocation_counter: int) -> None:
+    """
+    Validate that an invocation counter is within valid range.
+
+    The invocation counter is a 32-bit unsigned integer (0 to 2^32-1).
+
+    Args:
+        invocation_counter: Invocation counter value to validate
+
+    Raises:
+        ValueError: If invocation_counter is out of range
+    """
+    if not isinstance(invocation_counter, int):
+        raise ValueError(
+            f"Invocation counter must be an integer, got {type(invocation_counter).__name__}"
+        )
+    if invocation_counter < 0 or invocation_counter > 0xFFFFFFFF:
+        raise ValueError(
+            f"Invocation counter must be a 32-bit unsigned integer (0 to 4294967295). "
+            f"Got: {invocation_counter}"
+        )
+
+
+def validate_challenge(challenge: bytes, name: str = "challenge") -> None:
+    """
+    Validate that a challenge has a valid length.
+
+    According to DLMS/COSEM, challenges must be between 8 and 64 bytes.
+
+    Args:
+        challenge: Challenge bytes to validate
+        name: Name of the challenge for error messages
+
+    Raises:
+        ValueError: If challenge length is invalid
+    """
+    if not (8 <= len(challenge) <= 64):
+        raise ValueError(
+            f"{name} must be between 8 and 64 bytes. Got {len(challenge)} bytes"
+        )
+
+
+@dataclass
+class ValidationResult:
+    """
+    Result of a security configuration validation.
+
+    Attributes:
+        is_valid: Whether the validation passed
+        errors: List of error messages (empty if valid)
+        warnings: List of warning messages (non-critical issues)
+    """
+
+    is_valid: bool
+    errors: list[str]
+    warnings: list[str]
+
+    def __str__(self) -> str:
+        if self.is_valid:
+            result = "✓ Security configuration is valid"
+            if self.warnings:
+                result += "\nWarnings:\n  " + "\n  ".join(self.warnings)
+            return result
+        else:
+            return "✗ Security configuration is invalid:\n  " + "\n  ".join(self.errors)
+
+
+@dataclass
+class SecurityConfigValidator:
+    """
+    Validates DLMS/COSEM security configurations.
+
+    This class provides comprehensive validation of security parameters
+    including security suites, keys, system titles, and invocation counters.
+    Use before establishing a connection to catch configuration errors early.
+    """
+
+    security_suite: int
+    encryption_key: Optional[bytes] = None
+    authentication_key: Optional[bytes] = None
+    system_title: Optional[bytes] = None
+    invocation_counter: Optional[int] = None
+    authenticated: bool = False
+    encrypted: bool = False
+
+    def validate(self) -> ValidationResult:
+        """
+        Validate the complete security configuration.
+
+        Returns:
+            ValidationResult with validation status and any errors/warnings
+
+        Example:
+            >>> validator = SecurityConfigValidator(
+            ...     security_suite=0,
+            ...     encryption_key=bytes(16),
+            ...     authentication_key=bytes(16),
+            ...     system_title=bytes(8),
+            ...     invocation_counter=1,
+            ...     authenticated=True,
+            ...     encrypted=True
+            ... )
+            >>> result = validator.validate()
+            >>> if not result.is_valid:
+            ...     print(result)
+        """
+        errors: list[str] = []
+        warnings: list[str] = []
+
+        try:
+            suite_info = SecuritySuite.from_number(self.security_suite)
+            warnings.append(f"Using {suite_info}")
+        except InvalidSecuritySuiteError as e:
+            errors.append(str(e))
+            return ValidationResult(False, errors, warnings)
+
+        # Validate keys based on what security is being used
+        if self.encrypted or self.authenticated:
+            if self.encryption_key is None:
+                errors.append(
+                    "Encryption key is required when encrypted=True or authenticated=True"
+                )
+            else:
+                try:
+                    suite_info.validate_key(self.encryption_key, "encryption_key")
+                except KeyLengthError as e:
+                    errors.append(str(e))
+
+            if self.authentication_key is None:
+                errors.append(
+                    "Authentication key is required when encrypted=True or authenticated=True"
+                )
+            else:
+                try:
+                    suite_info.validate_key(self.authentication_key, "authentication_key")
+                except KeyLengthError as e:
+                    errors.append(str(e))
+
+        # Validate system title if provided
+        if self.system_title is not None:
+            try:
+                validate_system_title(self.system_title)
+            except ValueError as e:
+                errors.append(str(e))
+        elif self.encrypted or self.authenticated:
+            warnings.append(
+                "System title not provided. Required for encrypted/authenticated connections."
+            )
+
+        # Validate invocation counter if provided
+        if self.invocation_counter is not None:
+            try:
+                validate_invocation_counter(self.invocation_counter)
+            except ValueError as e:
+                errors.append(str(e))
+
+        # Check for common configuration mistakes
+        if self.encrypted and not self.authenticated:
+            warnings.append(
+                "Encryption without authentication is not recommended in DLMS/COSEM. "
+                "Consider setting authenticated=True."
+            )
+
+        is_valid = len(errors) == 0
+        return ValidationResult(is_valid, errors, warnings)
+
+    @classmethod
+    def from_connection_params(
+        cls,
+        security_suite: int,
+        encryption_key: Optional[bytes] = None,
+        authentication_key: Optional[bytes] = None,
+        system_title: Optional[bytes] = None,
+        invocation_counter: Optional[int] = None,
+        authenticated: bool = False,
+        encrypted: bool = False,
+    ) -> "SecurityConfigValidator":
+        """
+        Create a SecurityConfigValidator from connection parameters.
+
+        This is a convenience factory method that matches the typical
+        parameters used when creating a DLMS connection.
+
+        Returns:
+            A new SecurityConfigValidator instance
+
+        Example:
+            >>> validator = SecurityConfigValidator.from_connection_params(
+            ...     security_suite=0,
+            ...     encryption_key=my_enc_key,
+            ...     authentication_key=my_auth_key,
+            ...     system_title=b"MDMID000",
+            ...     invocation_counter=1,
+            ...     authenticated=True,
+            ...     encrypted=True
+            ... )
+            >>> result = validator.validate()
+            >>> assert result.is_valid, result
+        """
+        return cls(
+            security_suite=security_suite,
+            encryption_key=encryption_key,
+            authentication_key=authentication_key,
+            system_title=system_title,
+            invocation_counter=invocation_counter,
+            authenticated=authenticated,
+            encrypted=encrypted,
         )
 
 
@@ -302,7 +585,6 @@ def make_client_to_server_challenge(length: int = 8) -> bytes:
 
 
 class AuthenticationMethodManager(Protocol):
-
     """
 
     HLS:
@@ -315,14 +597,13 @@ class AuthenticationMethodManager(Protocol):
     secret: Optional[bytes]
     authentication_method: ClassVar[enumerations.AuthenticationMechanism]
 
-    def get_calling_authentication_value(self) -> bytes:
-        ...
+    def get_calling_authentication_value(self) -> bytes: ...
 
-    def hls_generate_reply_data(self, connection: DlmsConnection) -> bytes:
-        ...
+    def hls_generate_reply_data(self, connection: DlmsConnection) -> bytes: ...
 
-    def hls_meter_data_is_valid(self, data: bytes, connection: DlmsConnection) -> bool:
-        ...
+    def hls_meter_data_is_valid(
+        self, data: bytes, connection: DlmsConnection
+    ) -> bool: ...
 
 
 @attr.s(auto_attribs=True)

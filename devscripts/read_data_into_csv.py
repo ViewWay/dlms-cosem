@@ -6,18 +6,18 @@ from time import sleep
 
 from dateutil import parser as dateparser
 
-from dlms_cosem.utils import parse_as_dlms_data
 from dlms_cosem import a_xdr, cosem, enumerations
-from dlms_cosem.security import (
-    NoSecurityAuthentication,
-    HighLevelSecurityGmacAuthentication,
-)
 from dlms_cosem.client import DlmsClient
-from dlms_cosem.io import BlockingTcpIO, TcpTransport
 from dlms_cosem.cosem import selective_access
 from dlms_cosem.cosem.selective_access import RangeDescriptor
+from dlms_cosem.io import BlockingTcpIO, TcpTransport
 from dlms_cosem.parsers import ProfileGenericBufferParser
 from dlms_cosem.protocol.xdlms.conformance import Conformance
+from dlms_cosem.security import (
+    HighLevelSecurityGmacAuthentication,
+    NoSecurityAuthentication,
+)
+from dlms_cosem.utils import parse_as_dlms_data
 
 # set up logging so you get a bit nicer printout of what is happening.
 logging.basicConfig(
@@ -126,7 +126,6 @@ with management_client.session() as client:
 
     time_error = datetime.now(tz=timezone.utc) - read_to
 
-
     parser = ProfileGenericBufferParser(
         capture_objects=[
             cosem.CosemAttribute(
@@ -152,15 +151,13 @@ with management_client.session() as client:
         ],
         capture_period=60,
     )
-    #result = parser.parse_bytes(profile)
-    result=None
+    # result = parser.parse_bytes(profile)
+    result = None
     pprint(profile)
     data = parse_as_dlms_data(profile)
-
 
     with open("data_output.csv", "w", newline="") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=["value"])
         writer.writeheader()
         for row in data:
             writer.writerow({"value": row[2]})
-

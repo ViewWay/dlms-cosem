@@ -1,15 +1,16 @@
 import pytest
 
 from dlms_cosem import dlms_data, enumerations, exceptions, security, state
-from dlms_cosem.security import NoSecurityAuthentication
 from dlms_cosem.connection import (
     DlmsConnection,
+    DlmsConnectionSettings,
     XDlmsApduFactory,
-    make_client_to_server_challenge, DlmsConnectionSettings,
+    make_client_to_server_challenge,
 )
 from dlms_cosem.exceptions import LocalDlmsProtocolError
 from dlms_cosem.protocol import acse, xdlms
 from dlms_cosem.protocol.xdlms import Conformance
+from dlms_cosem.security import NoSecurityAuthentication
 
 
 def test_conformance_exists_on_simple_init():
@@ -67,7 +68,9 @@ def test_settings_exists_on_simple_init():
     assert c.settings is not None
 
 
-def test_settings_empty_system_title_in_general_glo_cipher_false(get_request: xdlms.GetRequestNormal):
+def test_settings_empty_system_title_in_general_glo_cipher_false(
+    get_request: xdlms.GetRequestNormal,
+):
     """
     Make sure that system_title is is used when protecting APDUs with default connection settings.
     """
@@ -77,7 +80,7 @@ def test_settings_empty_system_title_in_general_glo_cipher_false(get_request: xd
         client_system_title=system_title,
         authentication=NoSecurityAuthentication(),
         global_encryption_key=b"1111111111111111",
-        global_authentication_key=b"0000000000000000"
+        global_authentication_key=b"0000000000000000",
     )
 
     assert c.settings is not None
@@ -90,7 +93,9 @@ def test_settings_empty_system_title_in_general_glo_cipher_false(get_request: xd
     assert ciphered.system_title == system_title
 
 
-def test_settings_empty_system_title_in_general_glo_cipher_true(get_request: xdlms.GetRequestNormal):
+def test_settings_empty_system_title_in_general_glo_cipher_true(
+    get_request: xdlms.GetRequestNormal,
+):
     """
     Make sure that system_title is not used when protecting APDUs if the connections settings is to leave it empty
     """
@@ -219,7 +224,7 @@ def test_receive_get_response_sets_state_to_ready():
 
 
 def test_set_request_sets_state_in_waiting_for_set_response(
-        set_request: xdlms.SetRequestNormal,
+    set_request: xdlms.SetRequestNormal,
 ):
     c = DlmsConnection(
         state=state.DlmsConnectionState(current_state=state.READY),
@@ -314,7 +319,7 @@ def test_action_response_normal_with_data_sets_ready_when_awaiting_action_resopo
 
 
 def test_receive_exception_response_sets_state_to_ready(
-        exception_response: xdlms.ExceptionResponse,
+    exception_response: xdlms.ExceptionResponse,
 ):
     c = DlmsConnection(
         state=state.DlmsConnectionState(current_state=state.AWAITING_GET_RESPONSE),
@@ -327,16 +332,16 @@ def test_receive_exception_response_sets_state_to_ready(
 
 
 def test_hls_is_started_automatically(
-        connection_with_hls: DlmsConnection,
-        ciphered_hls_aare: acse.ApplicationAssociationResponse,
+    connection_with_hls: DlmsConnection,
+    ciphered_hls_aare: acse.ApplicationAssociationResponse,
 ):
     # Force state into awaiting response
     connection_with_hls.state.current_state = state.AWAITING_ASSOCIATION_RESPONSE
     connection_with_hls.receive_data(ciphered_hls_aare.to_bytes())
     connection_with_hls.next_event()
     assert (
-            connection_with_hls.state.current_state
-            == state.SHOULD_SEND_HLS_SEVER_CHALLENGE_RESULT
+        connection_with_hls.state.current_state
+        == state.SHOULD_SEND_HLS_SEVER_CHALLENGE_RESULT
     )
 
 
@@ -368,8 +373,8 @@ def test_hls_fails(connection_with_hls: DlmsConnection):
 
 
 def test_rejection_resets_connection_state(
-        connection_with_hls: DlmsConnection,
-        ciphered_hls_aare: acse.ApplicationAssociationResponse,
+    connection_with_hls: DlmsConnection,
+    ciphered_hls_aare: acse.ApplicationAssociationResponse,
 ):
     connection_with_hls.state.current_state = state.AWAITING_ASSOCIATION_RESPONSE
     ciphered_hls_aare.result = enumerations.AssociationResult.REJECTED_PERMANENT
@@ -384,7 +389,7 @@ def test_rlrq_raises_norlrqrlreerror_when_settings_use_rlrq_rlre_is_false():
         state=state.DlmsConnectionState(current_state=state.READY),
         client_system_title=b"12345678",
         authentication=NoSecurityAuthentication(),
-        settings=settings
+        settings=settings,
     )
     rlrq = c.get_rlrq()
     with pytest.raises(exceptions.NoRlrqRlreError):

@@ -221,7 +221,7 @@ class VisibleStringData(BaseDlmsData):
 
     def value_to_bytes(self) -> bytes:
         return self.value.encode("ascii")
-        
+
 
 @attr.s(auto_attribs=True)
 class UTF8StringData(BaseDlmsData):
@@ -237,7 +237,7 @@ class BCDData(BaseDlmsData):
 
 @attr.s(auto_attribs=True)
 class IntegerData(BaseDlmsData):
-    """"8 bit integer"""
+    """ "8 bit integer"""
 
     TAG = 15
     LENGTH = 1

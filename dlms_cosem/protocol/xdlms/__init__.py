@@ -1,15 +1,29 @@
 from dlms_cosem.protocol.xdlms.action import (
     ActionRequestFactory,
     ActionRequestNormal,
+    ActionRequestWithFirstPblock,
+    ActionRequestNextPblock,
+    ActionRequestWithList,
+    ActionRequestWithListAndFirstPblock,
     ActionResponseFactory,
     ActionResponseNormal,
     ActionResponseNormalWithData,
     ActionResponseNormalWithError,
+    ActionResponseWithPblock,
+    ActionResponseNextPblock,
+    ActionResponseWithList,
+    ActionResponseLastPblock,
 )
 from dlms_cosem.protocol.xdlms.confirmed_service_error import ConfirmedServiceError
 from dlms_cosem.protocol.xdlms.conformance import Conformance
 from dlms_cosem.protocol.xdlms.data_notification import DataNotification
 from dlms_cosem.protocol.xdlms.exception_response import ExceptionResponse
+from dlms_cosem.protocol.xdlms.general_block_transfer import (
+    BlockTransferStatus,
+    BlockType,
+    GeneralBlockTransferRequest,
+    GeneralBlockTransferResponse,
+)
 from dlms_cosem.protocol.xdlms.general_global_cipher import GeneralGlobalCipher
 from dlms_cosem.protocol.xdlms.get import (
     GetRequestFactory,
@@ -36,8 +50,16 @@ from dlms_cosem.protocol.xdlms.invoke_id_and_priority import InvokeIdAndPriority
 from dlms_cosem.protocol.xdlms.set import (
     SetRequestFactory,
     SetRequestNormal,
+    SetRequestWithFirstBlock,
+    SetRequestWithBlock,
+    SetRequestWithList,
+    SetRequestWithListFirstBlock,
     SetResponseFactory,
     SetResponseNormal,
+    SetResponseWithBlock,
+    SetResponseLastBlock,
+    SetResponseLastBlockWithList,
+    SetResponseWithList,
 )
 
 __all__ = [
@@ -62,6 +84,14 @@ __all__ = [
     "SetResponseFactory",
     "SetRequestNormal",
     "SetRequestFactory",
+    "SetRequestWithFirstBlock",
+    "SetRequestWithBlock",
+    "SetRequestWithList",
+    "SetRequestWithListFirstBlock",
+    "SetResponseWithBlock",
+    "SetResponseLastBlock",
+    "SetResponseLastBlockWithList",
+    "SetResponseWithList",
     "ExceptionResponse",
     "GlobalCipherInitiateRequest",
     "GlobalCipherInitiateResponse",
@@ -71,5 +101,17 @@ __all__ = [
     "ActionResponseFactory",
     "ActionRequestNormal",
     "ActionRequestFactory",
+    "ActionRequestWithFirstPblock",
+    "ActionRequestNextPblock",
+    "ActionRequestWithList",
+    "ActionRequestWithListAndFirstPblock",
+    "ActionResponseWithPblock",
+    "ActionResponseNextPblock",
+    "ActionResponseWithList",
+    "ActionResponseLastPblock",
     "InvokeIdAndPriority",
+    "GeneralBlockTransferRequest",
+    "GeneralBlockTransferResponse",
+    "BlockTransferStatus",
+    "BlockType",
 ]

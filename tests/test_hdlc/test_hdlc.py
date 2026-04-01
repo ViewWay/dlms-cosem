@@ -257,23 +257,36 @@ class TestUnnumberedInformationControlField:
 
 
 class TestFiorentiniLocal:
-    """ no physical address when talking to fiorentini meters"""
+    """no physical address when talking to fiorentini meters"""
 
     def test_frame(self):
-        response = b'~\xa0\x07!\x03s\x01@~'
+        response = b"~\xa0\x07!\x03s\x01@~"
 
         frame = frames.UnNumberedAcknowledgmentFrame.from_bytes(response)
 
     def test_ua_frame(self):
         frame = frames.UnNumberedAcknowledgmentFrame(
-            destination_address=HdlcAddress(logical_address=16, physical_address=None, address_type='client',
-                                            extended_addressing=False),
-            source_address=HdlcAddress(logical_address=1, physical_address=None, address_type='server',
-                                       extended_addressing=False), payload=b'', segmented=False, final=True)
+            destination_address=HdlcAddress(
+                logical_address=16,
+                physical_address=None,
+                address_type="client",
+                extended_addressing=False,
+            ),
+            source_address=HdlcAddress(
+                logical_address=1,
+                physical_address=None,
+                address_type="server",
+                extended_addressing=False,
+            ),
+            payload=b"",
+            segmented=False,
+            final=True,
+        )
 
         fsc = frame.fcs
+
     def test_fcs(self):
-        data = b'~\xa0\x07!\x03s\x01@~'
+        data = b"~\xa0\x07!\x03s\x01@~"
         fcs = data[-3:-1]
         assert fcs == b"\x01@"
         # frame_content should be everything except flag and fcs

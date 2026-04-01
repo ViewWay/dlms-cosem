@@ -1,0 +1,245 @@
+#!/usr/bin/env python
+"""
+dlms-keys - DLMS/COSEM Key Management CLI
+
+Usage:
+    dlms-keys generate [--suite SUITE] [--output FILE] [--profile NAME]
+    dlms-keys validate [--file FILE] [--profile NAME]
+    dlms-keys rotate [--file FILE] [--profile NAME] [--new-suite SUITE] [--keep-backup]
+    dlms-keys convert [--input FILE] [--output FILE]
+    dlms-keys show [--profile NAME] [--file FILE]
+    dlms-keys check-env
+"""
+import sys
+import argparse
+from pathlib import Path
+
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from dlms_cosem.key_management import (
+    KeyManager,
+    KeyRotator,
+    KeyFormatter,
+    ConfigurationNotFoundError,
+)
+
+
+def cmd_generate(args):
+    """Generate new keys and save to file."""
+    print(f"Generating keys for Security Suite {args.suite}...")
+
+    profile = KeyManager.generate(
+        suite=args.suite,
+        name=args.profile or "default",
+    )
+
+    if args.output:
+        KeyManager.save(profile, args.output)
+        print(f"✓ Keys saved to {args.output}")
+    else:
+        # Display keys
+        print(f"\n--- Generated Keys (Suite {args.suite}) ---")
+        print(f"Encryption Key:    {KeyFormatter.format_key(profile.encryption_key, 'hex')}")
+        print(f"Authentication Key: {KeyFormatter.format_key(profile.authentication_key, 'hex')}")
+        print(f"System Title:       {profile.system_title.hex()}")
+        print("\nWarning: Keys are displayed above. Use --output to save to a file.")
+
+
+def cmd_validate(args):
+    """Validate keys in a configuration file."""
+    try:
+        if args.file:
+            profile = KeyManager.load(profile_name=args.profile, paths=[args.file])
+        else:
+            profile = KeyManager.load(profile_name=args.profile)
+
+        profile.validate()
+        print(f"✓ Security profile '{args.profile}' is valid")
+        print(f"  Suite: {profile.suite}")
+        print(f"  Authenticated: {profile.authenticated}")
+        print(f"  Encrypted: {profile.encrypted}")
+
+    except Exception as e:
+        print(f"✗ Validation failed: {e}")
+        sys.exit(1)
+
+
+def cmd_rotate(args):
+    """Rotate keys in a configuration file."""
+    try:
+        if args.file:
+            old_profile = KeyManager.load(profile_name=args.profile, paths=[args.file])
+        else:
+            old_profile = KeyManager.load(profile_name=args.profile)
+
+        print(f"Rotating keys for profile '{args.profile}'...")
+
+        result = KeyRotator.rotate(
+            old_profile,
+            new_suite=args.new_suite,
+            keep_old_keys=args.keep_backup,
+        )
+
+        if args.output:
+            KeyManager.save(result.new_profile, args.output)
+            print(f"✓ New keys saved to {args.output}")
+        else:
+            # Update the original file
+            KeyManager.save(result.new_profile, args.file)
+            print(f"✓ Keys rotated and saved to {args.file}")
+
+        print(f"  Rotation ID: {result.rotation_id}")
+
+        if result.legacy_key:
+            print(f"  Old keys preserved (backup enabled)")
+
+    except Exception as e:
+        print(f"✗ Rotation failed: {e}")
+        sys.exit(1)
+
+
+def cmd_convert(args):
+    """Convert configuration between formats."""
+    # Load from input
+    profile = KeyManager.load(profile_name=args.profile, paths=[args.input])
+
+    # Save to output
+    KeyManager.save(profile, args.output)
+    print(f"✓ Converted {args.input} to {args.output}")
+
+
+def cmd_show(args):
+    """Show current security configuration."""
+    try:
+        if args.file:
+            profile = KeyManager.load(profile_name=args.profile, paths=[args.file])
+        else:
+            profile = KeyManager.load(profile_name=args.profile)
+
+        print(f"\n--- Security Profile: {profile.name} ---")
+        print(f"Suite:           {profile.suite} ({'AES-256' if profile.suite == 2 else 'AES-128'})")
+        print(f"Authenticated:    {profile.authenticated}")
+        print(f"Encrypted:        {profile.encrypted}")
+        print(f"System Title:     {profile.system_title.hex() if profile.system_title else '(not set)'}")
+        print(f"\nKeys:")
+        print(f"  Encryption:    {KeyFormatter.format_key(profile.encryption_key, 'hex')[:32]}...")
+        print(f"  Authentication: {KeyFormatter.format_key(profile.authentication_key, 'hex')[:32]}...")
+
+    except ConfigurationNotFoundError as e:
+        print(f"✗ Configuration not found: {e}")
+        sys.exit(1)
+
+
+def cmd_check_env():
+    """Check environment variables for DLMS configuration."""
+    import os
+
+    env_vars = {
+        "DLMS_SECURITY_SUITE": os.getenv("DLMS_SECURITY_SUITE"),
+        "DLMS_ENCRYPTION_KEY": os.getenv("DLMS_ENCRYPTION_KEY"),
+        "DLMS_AUTHENTICATION_KEY": os.getenv("DLMS_AUTHENTICATION_KEY"),
+        "DLMS_SYSTEM_TITLE": os.getenv("DLMS_SYSTEM_TITLE"),
+        "DLMS_AUTHENTICATED": os.getenv("DLMS_AUTHENTICATED"),
+        "DLMS_ENCRYPTED": os.getenv("DLMS_ENCRYPTED"),
+    }
+
+    missing = [k for k, v in env_vars.items() if v is None and k not in
+               ("DLMS_SYSTEM_TITLE", "DLMS_AUTHENTICATED", "DLMS_ENCRYPTED")]
+
+    if missing and not any(env_vars[k] for k in ["DLMS_SECURITY_SUITE", "DLMS_ENCRYPTION_KEY"]):
+        print("✗ DLMS environment variables not set")
+        print("\nRequired variables:")
+        print("  DLMS_SECURITY_SUITE=0")
+        print("  DLMS_ENCRYPTION_KEY=hex:...")
+        print("  DLMS_AUTHENTICATION_KEY=hex:...")
+        sys.exit(1)
+
+    print("DLMS environment variables:")
+    for k, v in env_vars.items():
+        if v:
+            display = v
+            if "KEY" in k:
+                display = v[:20] + "..." if len(v) > 20 else v
+            print(f"  {k}={display}")
+
+    # Try to load and validate
+    try:
+        profile = KeyManager.load()
+        profile.validate()
+        print("\n✓ Environment configuration is valid")
+    except Exception as e:
+        print(f"\n✗ Environment configuration error: {e}")
+        sys.exit(1)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="DLMS/COSEM Key Management Tool",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    # generate
+    gen_parser = subparsers.add_parser("generate", help="Generate new keys")
+    gen_parser.add_argument("--suite", type=int, default=0, choices=[0, 1, 2],
+                           help="Security suite (default: 0)")
+    gen_parser.add_argument("--output", "-o", help="Output file path")
+    gen_parser.add_argument("--profile", "-p", default="default",
+                           help="Profile name (default: default)")
+
+    # validate
+    val_parser = subparsers.add_parser("validate", help="Validate key configuration")
+    val_parser.add_argument("--file", "-f", help="Configuration file path")
+    val_parser.add_argument("--profile", "-p", default="default",
+                           help="Profile name to validate (default: default)")
+
+    # rotate
+    rot_parser = subparsers.add_parser("rotate", help="Rotate keys")
+    rot_parser.add_argument("--file", "-f", required=True, help="Configuration file path")
+    rot_parser.add_argument("--profile", "-p", default="default",
+                           help="Profile name to rotate (default: default)")
+    rot_parser.add_argument("--new-suite", type=int, choices=[0, 1, 2],
+                           help="New security suite (default: keep current)")
+    rot_parser.add_argument("--keep-backup", action="store_true",
+                           help="Preserve old keys in output")
+    rot_parser.add_argument("--output", "-o", help="Output file path (default: update input)")
+
+    # convert
+    conv_parser = subparsers.add_parser("convert", help="Convert between formats")
+    conv_parser.add_argument("--input", "-i", required=True, help="Input file path")
+    conv_parser.add_argument("--output", "-o", required=True, help="Output file path")
+    conv_parser.add_argument("--profile", "-p", default="default",
+                           help="Profile name (default: default)")
+
+    # show
+    show_parser = subparsers.add_parser("show", help="Show current configuration")
+    show_parser.add_argument("--file", "-f", help="Configuration file path")
+    show_parser.add_argument("--profile", "-p", default="default",
+                           help="Profile name (default: default)")
+
+    # check-env
+    subparsers.add_parser("check-env", help="Check environment variables")
+
+    args = parser.parse_args()
+
+    if not args.command:
+        parser.print_help()
+        sys.exit(1)
+
+    if args.command == "generate":
+        cmd_generate(args)
+    elif args.command == "validate":
+        cmd_validate(args)
+    elif args.command == "rotate":
+        cmd_rotate(args)
+    elif args.command == "convert":
+        cmd_convert(args)
+    elif args.command == "show":
+        cmd_show(args)
+    elif args.command == "check-env":
+        cmd_check_env()
+
+
+if __name__ == "__main__":
+    main()

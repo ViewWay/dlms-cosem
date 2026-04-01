@@ -2,9 +2,9 @@ import logging
 from functools import partial
 from pprint import pprint
 
-from dlms_cosem import cosem, enumerations, utils, security
+from dlms_cosem import cosem, enumerations, security, utils
 from dlms_cosem.client import DlmsClient
-from dlms_cosem.io import TcpTransport, BlockingTcpIO
+from dlms_cosem.io import BlockingTcpIO, TcpTransport
 from dlms_cosem.parsers import AssociationObjectListParser
 from dlms_cosem.protocol.xdlms.conformance import Conformance
 
@@ -64,7 +64,6 @@ LOAD_PROFILE_BUFFER = cosem.CosemAttribute(
     instance=cosem.Obis(1, 0, 99, 1, 0),
     attribute=2,
 )
-
 
 
 host = "127.0.0.1"
