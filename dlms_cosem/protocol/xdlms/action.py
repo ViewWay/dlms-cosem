@@ -6,6 +6,7 @@ from dlms_cosem import cosem, dlms_data
 from dlms_cosem import enumerations
 from dlms_cosem.protocol.xdlms.base import AbstractXDlmsApdu
 from dlms_cosem.protocol.xdlms.invoke_id_and_priority import InvokeIdAndPriority
+from dlms_cosem.cosem.selective_access import AccessDescriptorFactory
 
 # Action-Request ::= CHOICE
 # {
@@ -39,6 +40,12 @@ class ActionRequestNormal(AbstractXDlmsApdu):
         default=InvokeIdAndPriority(0, True, True),
         validator=attr.validators.instance_of(InvokeIdAndPriority),
     )
+    access_selection: Optional[
+        Union[
+            "dlms_cosem.cosem.selective_access.RangeDescriptor",
+            "dlms_cosem.cosem.selective_access.EntryDescriptor",
+        ]
+    ] = attr.ib(default=None)
 
     def to_bytes(self):
         out = bytearray()
@@ -46,6 +53,15 @@ class ActionRequestNormal(AbstractXDlmsApdu):
         out.append(self.ACTION_TYPE.value)
         out.extend(self.invoke_id_and_priority.to_bytes())
         out.extend(self.cosem_method.to_bytes())
+        if self.access_selection:
+            # Access selection is encoded after the method
+            out.append(0x01)  # Has access selection
+            # Encode the access selection descriptor
+            access_bytes = self.access_selection.to_bytes()
+            out.extend(access_bytes)
+        else:
+            # No access selection
+            out.append(0x00)
         if self.data:
             out.append(0x01)
             out.extend(self.data)
@@ -73,9 +89,22 @@ class ActionRequestNormal(AbstractXDlmsApdu):
             data.pop(0).to_bytes(1, "big")
         )
         cosem_method = cosem.CosemMethod.from_bytes(data[:9])
-        has_data = bool(data[9])
+        data = data[9:]
+
+        # Check for access selection
+        has_access_selection = bool(data.pop(0))
+        access_selection = None
+        if has_access_selection:
+            # Parse access selection descriptor
+            access_selection = AccessDescriptorFactory.from_bytes(bytes(data))
+            # Move data pointer past the access selection
+            access_len = len(access_selection.to_bytes())
+            data = data[access_len:]
+
+        # Check for data
+        has_data = bool(data.pop(0))
         if has_data:
-            request_data = data[10:]
+            request_data = bytes(data)
         else:
             request_data = None
 
@@ -83,6 +112,7 @@ class ActionRequestNormal(AbstractXDlmsApdu):
             cosem_method=cosem_method,
             data=request_data,
             invoke_id_and_priority=invoke_id_and_priority,
+            access_selection=access_selection,
         )
 
 
@@ -233,6 +263,59 @@ class ActionRequestNextPblock(AbstractXDlmsApdu):
 
 
 @attr.s(auto_attribs=True)
+class CosemMethodWithSelectiveAccess:
+    """
+    Cosem-Method-With-Selective-Access ::= SEQUENCE
+    {
+    cosem-method  Cosem-Method,
+    access-select [0] IMPLICIT Selective-Access-Descriptor OPTIONAL
+    }
+    """
+
+    cosem_method: cosem.CosemMethod = attr.ib(
+        validator=attr.validators.instance_of(cosem.CosemMethod)
+    )
+    access_selection: Optional[
+        Union[
+            "dlms_cosem.cosem.selective_access.RangeDescriptor",
+            "dlms_cosem.cosem.selective_access.EntryDescriptor",
+        ]
+    ] = attr.ib(default=None)
+
+    def to_bytes(self) -> bytes:
+        out = bytearray()
+        out.extend(self.cosem_method.to_bytes())
+        if self.access_selection:
+            out.append(0x01)  # Has access selection
+            access_bytes = self.access_selection.to_bytes()
+            out.extend(access_bytes)
+        else:
+            out.append(0x00)  # No access selection
+        return bytes(out)
+
+    @classmethod
+    def from_bytes(cls, data: bytearray) -> "CosemMethodWithSelectiveAccess":
+        # Parse CosemMethod (9 bytes)
+        cosem_method = cosem.CosemMethod.from_bytes(bytes(data[:9]))
+        data = data[9:]
+
+        # Check for access selection
+        has_access = bool(data.pop(0))
+        access_selection = None
+        if has_access:
+            # Parse access selection descriptor
+            access_selection = AccessDescriptorFactory.from_bytes(bytes(data))
+            # Move data pointer past the access selection
+            access_len = len(access_selection.to_bytes())
+            data = data[access_len:]
+
+        return cls(
+            cosem_method=cosem_method,
+            access_selection=access_selection,
+        )
+
+
+@attr.s(auto_attribs=True)
 class ActionRequestWithList(AbstractXDlmsApdu):
     """
     Action-Request-With-List ::= SEQUENCE
@@ -251,7 +334,13 @@ class ActionRequestWithList(AbstractXDlmsApdu):
     TAG: ClassVar[int] = 195
     ACTION_TYPE: ClassVar[enumerations.ActionType] = enumerations.ActionType.WITH_LIST
 
-    method_list: List[cosem.CosemMethod] = attr.ib(factory=list)
+    method_list: List[CosemMethodWithSelectiveAccess] = attr.ib(
+        factory=list,
+        converter=lambda v: [
+            CosemMethodWithSelectiveAccess(m) if isinstance(m, cosem.CosemMethod) else m
+            for m in (v or [])
+        ],
+    )
     invoke_id_and_priority: InvokeIdAndPriority = attr.ib(
         default=InvokeIdAndPriority(0, True, True),
         validator=attr.validators.instance_of(InvokeIdAndPriority),
@@ -264,9 +353,8 @@ class ActionRequestWithList(AbstractXDlmsApdu):
         out.extend(self.invoke_id_and_priority.to_bytes())
         out.append(len(self.method_list))
 
-        for cosem_method in self.method_list:
-            out.extend(cosem_method.to_bytes())
-            out.append(0x00)  # No access selection
+        for method_with_access in self.method_list:
+            out.extend(method_with_access.to_bytes())
 
         return bytes(out)
 
@@ -296,15 +384,8 @@ class ActionRequestWithList(AbstractXDlmsApdu):
 
         method_list = []
         for _ in range(num_methods):
-            # Parse CosemMethod (9 bytes)
-            cosem_method = cosem.CosemMethod.from_bytes(bytes(data[:9]))
-            data = data[9:]
-            # Skip access selection for now
-            has_access = bool(data.pop(0))
-            if has_access:
-                # TODO: Parse access selection
-                _ = data.pop(0)
-            method_list.append(cosem_method)
+            method_with_access = CosemMethodWithSelectiveAccess.from_bytes(data)
+            method_list.append(method_with_access)
 
         return cls(
             method_list=method_list,
@@ -326,7 +407,13 @@ class ActionRequestWithListAndFirstPblock(AbstractXDlmsApdu):
     TAG: ClassVar[int] = 195
     ACTION_TYPE: ClassVar[enumerations.ActionType] = enumerations.ActionType.WITH_LIST_AND_FIRST_PBLOCK
 
-    method_list: List[cosem.CosemMethod] = attr.ib(factory=list)
+    method_list: List[CosemMethodWithSelectiveAccess] = attr.ib(
+        factory=list,
+        converter=lambda v: [
+            CosemMethodWithSelectiveAccess(m) if isinstance(m, cosem.CosemMethod) else m
+            for m in (v or [])
+        ],
+    )
     invoke_id_and_priority: InvokeIdAndPriority = attr.ib(
         default=InvokeIdAndPriority(0, True, True),
         validator=attr.validators.instance_of(InvokeIdAndPriority),
@@ -342,10 +429,9 @@ class ActionRequestWithListAndFirstPblock(AbstractXDlmsApdu):
         out.extend(self.invoke_id_and_priority.to_bytes())
         out.append(len(self.method_list))
 
-        # Method list
-        for cosem_method in self.method_list:
-            out.extend(cosem_method.to_bytes())
-            out.append(0x00)  # No access selection
+        # Method list with selective access
+        for method_with_access in self.method_list:
+            out.extend(method_with_access.to_bytes())
 
         # DataBlock-SA
         out.append(0x01 if self.last_block else 0x00)
@@ -381,14 +467,8 @@ class ActionRequestWithListAndFirstPblock(AbstractXDlmsApdu):
 
         method_list = []
         for _ in range(num_methods):
-            # Parse CosemMethod (9 bytes)
-            cosem_method = cosem.CosemMethod.from_bytes(bytes(data[:9]))
-            data = data[9:]
-            # Skip access selection
-            has_access = bool(data.pop(0))
-            if has_access:
-                _ = data.pop(0)
-            method_list.append(cosem_method)
+            method_with_access = CosemMethodWithSelectiveAccess.from_bytes(data)
+            method_list.append(method_with_access)
 
         # DataBlock-SA
         last_block = bool(data.pop(0))

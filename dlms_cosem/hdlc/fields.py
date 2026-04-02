@@ -28,44 +28,65 @@ class _AbstractHdlcControlField(abc.ABC):
         raise NotImplementedError()
 
 
-@attr.s(auto_attribs=True)
 class SnrmControlField(_AbstractHdlcControlField):
     """
     S-frame fo SNRM request.
     """
 
+    def __init__(self, final: bool = True):
+        """
+        Initialize SNRM control field.
+
+        Args:
+            final: Whether this is the final frame of a multi-frame transmission
+        """
+        self.final = final
+
     def is_final(self):
-        """'Almost' all the time a SNRM frame is contaned in single frame."""
-        # TODO: Handle multi frame
-        return True
+        """
+        Check if this is the final frame.
+
+        For SNRM, most implementations use a single frame, but the
+        protocol allows multi-frame SNRM when parameter data is large.
+        """
+        return self.final
 
     def to_bytes(self) -> bytes:
         out = 0b10000011
-        if self.is_final:
+        if self.is_final():
             out |= 0b00010000
         return out.to_bytes(1, "big")
 
 
-@attr.s(auto_attribs=True)
 class UaControlField(_AbstractHdlcControlField):
     """
     S-frame for Unacknowladge Answer.
     """
 
+    def __init__(self, final: bool = True):
+        """
+        Initialize UA control field.
+
+        Args:
+            final: Whether this is the final frame of a multi-frame transmission
+        """
+        self.final = final
+
     def is_final(self):
         """
-        Most UA is only one frame. But in the HDLC setup it can be longer depending on
-        the data send.
-        # TODO: Handle multi frame
+        Check if this is the final frame.
+
+        Most UA is only one frame. But in the HDLC setup it can be longer
+        depending on the data send (e.g., when returning negotiated parameters).
         """
-        return True
+        return self.final
 
     def to_bytes(self) -> bytes:
         """
         Returns byte representation of the field.
         """
         out = 0b01100011
-        if self.is_final:
+        if self.is_final():
             out |= 0b00010000
         return out.to_bytes(1, "big")
 

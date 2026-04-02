@@ -1,4 +1,5 @@
 import contextlib
+from datetime import datetime
 from typing import *
 from typing import Any, Generator
 
@@ -7,7 +8,10 @@ import structlog
 
 from dlms_cosem import cosem, dlms_data, enumerations, exceptions, state, utils
 from dlms_cosem.connection import DlmsConnection, DlmsConnectionSettings
-from dlms_cosem.cosem.selective_access import RangeDescriptor
+from dlms_cosem.cosem.selective_access import (
+    EntryDescriptor,
+    RangeDescriptor,
+)
 from dlms_cosem.io import DlmsTransport
 from dlms_cosem.protocol import acse, xdlms
 from dlms_cosem.protocol.xdlms import ConfirmedServiceError
@@ -89,7 +93,7 @@ class DlmsClient:
     def get(
         self,
         cosem_attribute: cosem.CosemAttribute,
-        access_descriptor: Optional[RangeDescriptor] = None,
+        access_descriptor: Optional[Union[RangeDescriptor, EntryDescriptor]] = None,
     ) -> bytes:
         invoke = self.next_invoke_id_and_priority()
         self.send(
@@ -153,6 +157,113 @@ class DlmsClient:
                 f"{response.service_error.name}"
             )
         return response
+
+    def get_with_range(
+        self,
+        cosem_attribute: cosem.CosemAttribute,
+        from_value: datetime,
+        to_value: datetime,
+        restricting_object: Optional[cosem.CosemAttribute] = None,
+    ) -> bytes:
+        """
+        Get Profile Generic data within a specific time range (ReadByRange).
+
+        This is a convenience method that creates a RangeDescriptor and calls get().
+
+        Args:
+            cosem_attribute: The Profile Generic buffer attribute to read (typically attribute 2)
+            from_value: Start datetime (inclusive)
+            to_value: End datetime (inclusive)
+            restricting_object: Optional COSEM attribute used for indexing (defaults to clock attribute)
+
+        Returns:
+            Raw profile data bytes
+
+        Example:
+            >>> from datetime import datetime
+            >>> profile_attr = CosemAttribute(
+            ...     interface=CosemInterface.PROFILE_GENERIC,
+            ...     instance=Obis("1.0.99.1.0.255"),
+            ...     attribute=2  # buffer attribute
+            ... )
+            >>> data = client.get_with_range(
+            ...     profile_attr,
+            ...     datetime(2024, 1, 1),
+            ...     datetime(2024, 1, 31)
+            ... )
+        """
+        from dlms_cosem.cosem.capture_object import CaptureObject
+
+        # Default to clock attribute if not specified
+        if restricting_object is None:
+            restricting_object = cosem.CosemAttribute(
+                interface=cosem_attribute.interface,
+                instance=cosem_attribute.instance,
+                attribute=3,  # capture_objects attribute (index is in the data)
+            )
+
+        restricting_capture_object = CaptureObject(
+            cosem_attribute=restricting_object,
+            data_index=0,  # Typically index 0 for the timestamp column
+        )
+
+        access_descriptor = RangeDescriptor(
+            restricting_object=restricting_capture_object,
+            from_value=from_value,
+            to_value=to_value,
+        )
+
+        return self.get(cosem_attribute, access_descriptor=access_descriptor)
+
+    def get_with_entry(
+        self,
+        cosem_attribute: cosem.CosemAttribute,
+        from_entry: int = 1,
+        to_entry: int = 0,
+        from_selected_value: int = 1,
+        to_selected_value: int = 0,
+    ) -> bytes:
+        """
+        Get Profile Generic data by entry index (ReadByEntry).
+
+        This is a convenience method that creates an EntryDescriptor and calls get().
+
+        Args:
+            cosem_attribute: The Profile Generic buffer attribute to read (typically attribute 2)
+            from_entry: Starting entry index (1-based, default 1)
+            to_entry: Ending entry index (0 means to the last entry, default 0)
+            from_selected_value: Starting column index (1-based, default 1)
+            to_selected_value: Ending column index (0 means to the last column, default 0)
+
+        Returns:
+            Raw profile data bytes
+
+        Example:
+            >>> # Get first 100 entries, all columns
+            >>> profile_attr = CosemAttribute(
+            ...     interface=CosemInterface.PROFILE_GENERIC,
+            ...     instance=Obis("1.0.99.1.0.255"),
+            ...     attribute=2
+            ... )
+            >>> data = client.get_with_entry(profile_attr, from_entry=1, to_entry=100)
+
+            >>> # Get entries 1-100, but only columns 1-5 (for example: timestamp + 4 values)
+            >>> data = client.get_with_entry(
+            ...     profile_attr,
+            ...     from_entry=1,
+            ...     to_entry=100,
+            ...     from_selected_value=1,
+            ...     to_selected_value=5
+            ... )
+        """
+        access_descriptor = EntryDescriptor(
+            from_entry=from_entry,
+            to_entry=to_entry,
+            from_selected_value=from_selected_value,
+            to_selected_value=to_selected_value,
+        )
+
+        return self.get(cosem_attribute, access_descriptor=access_descriptor)
 
     def set(self, cosem_attribute: cosem.CosemAttribute, data: bytes):
         invoke = self.next_invoke_id_and_priority()

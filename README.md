@@ -66,7 +66,23 @@ See [docs/key_management.md](docs/key_management.md) for detailed documentation.
 
 # Documentation
 
-Full documentation can be found at [www.dlms.dev](https://www.dlms.dev)
+* [Architecture Documentation](docs/ARCHITECTURE.md) - Library architecture and design
+* Full documentation can be found at [www.dlms.dev](https://www.dlms.dev)
+
+# Examples
+
+The `examples/` folder contains comprehensive examples:
+
+* [hdlc_parameter_negotiation.py](examples/hdlc_parameter_negotiation.py) - HDLC parameter negotiation
+* [profile_generic_read_methods.py](examples/profile_generic_read_methods.py) - Profile Generic access methods
+* [exception_handling.py](examples/exception_handling.py) - Error handling patterns
+
+Run examples directly:
+```bash
+uv run python examples/hdlc_parameter_negotiation.py
+uv run python examples/profile_generic_read_methods.py
+uv run python examples/exception_handling.py
+```
 
 # About
 
@@ -86,13 +102,85 @@ this is a use-case you need, consider sponsoring the development and contact us.
 
 * AssociationRequest  and AssociationRelease
 * GET, GET.WITH_BLOCK, GET.WITH_LIST
-* SET
-* ACTION
+* SET With Block, SET With List
+* ACTION With Block, ACTION With List
 * DataNotification
-* GlobalCiphering - Authenticated and Encrypted.
+* GlobalCiphering - Authenticated and Encrypted
 * HLS-GMAC, LLS, HLS-Common auth
-* Selective access via RangeDescriptor
+* Selective access via RangeDescriptor and EntryDescriptor
 * Parsing of ProfileGeneric buffers
+* **HDLC parameter negotiation** - Optimize connection performance
+* **Exception hierarchy** - Unified error handling with error codes
+
+## New Features (v2026.1.0)
+
+### HDLC Parameter Negotiation
+
+Negotiate HDLC connection parameters to improve performance:
+
+```python
+from dlms_cosem.hdlc import HdlcParameterList
+
+# Create SNRM frame with proposed parameters
+params = HdlcParameterList()
+params.set_window_size(5)  # Up to 5 frames without ACK
+params.set_max_info_length_tx(1024)  # Up to 1024 bytes per frame
+
+# Use in SNRM/UA frames
+snrm = SetNormalResponseModeFrame(
+    destination_address=client_addr,
+    source_address=server_addr,
+    parameters=params
+)
+```
+
+### Profile Generic Enhanced Access
+
+Read Profile Generic data more efficiently:
+
+```python
+from datetime import datetime
+
+# Read by time range
+data = client.get_with_range(
+    profile_attribute,
+    from_value=datetime(2024, 1, 1),
+    to_value=datetime(2024, 1, 31)
+)
+
+# Read by entry with column filtering
+data = client.get_with_entry(
+    profile_attribute,
+    from_entry=1,
+    to_entry=100,
+    from_selected_value=1,
+    to_selected_value=5  # Only columns 1-5
+)
+```
+
+### Unified Exception Hierarchy
+
+Better error handling with structured error information:
+
+```python
+from dlms_cosem.exceptions import (
+    DlmsException,
+    DlmsConnectionError,
+    DlmsSecurityError,
+    create_timeout_error,
+)
+
+try:
+    data = client.get(attribute)
+except DlmsTimeoutError as e:
+    print(f"Timeout: {e.message}, Code: {e.error_code}")
+    # Retry with backoff
+except DlmsSecurityError as e:
+    print(f"Security error: {e.message}")
+    # Check credentials
+except DlmsException as e:
+    print(f"DLMS error: {e.message}")
+```
 
 # Example use:
 

@@ -65,6 +65,9 @@ dev = [
   "tomli-w",
 ]
 
+[project.scripts]
+dlms-keys = "dlms_cosem.cli.dlms_keys:main"
+
 [project.urls]
 Documentation = "https://www.dlms.dev/"
 "Bug Tracker" = "https://github.com/u9n/dlms-cosem/issues"

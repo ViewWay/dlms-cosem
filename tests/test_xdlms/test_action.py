@@ -6,7 +6,8 @@ from dlms_cosem.protocol import xdlms
 
 class TestActionRequestNormal:
     def test_transform_bytes(self):
-        data = b'\xc3\x01\xc0\x00\x0f\x00\x00(\x00\x00\xff\x01\x01\t\x11\x10\x00\x00\x1a\x90\xe6\xd2"\x1f\xa2\xfd\x85\xee\xd6\x1a\xcc"'
+        # Updated to include has_access_selection flag (0x00) after method
+        data = b'\xc3\x01\xc0\x00\x0f\x00\x00(\x00\x00\xff\x01\x00\x01\t\x11\x10\x00\x00\x1a\x90\xe6\xd2"\x1f\xa2\xfd\x85\xee\xd6\x1a\xcc"'
         action = xdlms.ActionRequestNormal(
             cosem_method=cosem.CosemMethod(
                 interface=enumerations.CosemInterface.ASSOCIATION_LN,
@@ -23,7 +24,8 @@ class TestActionRequestNormal:
         assert action == xdlms.ActionRequestNormal.from_bytes(data)
 
     def test_transform_bytes_without_data(self):
-        data = b"\xc3\x01\xc0\x00\x0f\x00\x00(\x00\x00\xff\x01\x00"
+        # Updated to include has_access_selection flag (0x00) after method
+        data = b"\xc3\x01\xc0\x00\x0f\x00\x00(\x00\x00\xff\x01\x00\x00"
         action = xdlms.ActionRequestNormal(
             cosem_method=cosem.CosemMethod(
                 interface=enumerations.CosemInterface.ASSOCIATION_LN,
@@ -126,7 +128,8 @@ class TestActionRequestWithList:
         encoded = request.to_bytes()
         decoded = xdlms.ActionRequestWithList.from_bytes(encoded)
         assert len(decoded.method_list) == 2
-        assert decoded.method_list[0].instance.f == 1
+        # method_list now contains CosemMethodWithSelectiveAccess objects
+        assert decoded.method_list[0].cosem_method.instance.f == 1
 
 
 class TestActionRequestWithListAndFirstPblock:
@@ -155,18 +158,21 @@ class TestActionRequestWithListAndFirstPblock:
 
 class TestActionRequestFactory:
     def test_normal_with_data(self):
-        data = b'\xc3\x01\xc0\x00\x0f\x00\x00(\x00\x00\xff\x01\x01\t\x11\x10\x00\x00\x1a\x90\xe6\xd2"\x1f\xa2\xfd\x85\xee\xd6\x1a\xcc"'
+        # Updated to include has_access_selection flag (0x00) after method
+        data = b'\xc3\x01\xc0\x00\x0f\x00\x00(\x00\x00\xff\x01\x00\x01\t\x11\x10\x00\x00\x1a\x90\xe6\xd2"\x1f\xa2\xfd\x85\xee\xd6\x1a\xcc"'
         action = xdlms.ActionRequestFactory.from_bytes(data)
         assert isinstance(action, xdlms.ActionRequestNormal)
 
     def test_normal_without_data(self):
-        data = b"\xc3\x01\xc0\x00\x0f\x00\x00(\x00\x00\xff\x01\x00"
+        # Updated to include has_access_selection flag (0x00) after method
+        data = b"\xc3\x01\xc0\x00\x0f\x00\x00(\x00\x00\xff\x01\x00\x00"
         action = xdlms.ActionRequestFactory.from_bytes(data)
         assert isinstance(action, xdlms.ActionRequestNormal)
         assert action.data is None
 
     def test_wrong_tag_raises_valueerror(self):
-        data = b"\xc4\x01\xc0\x00\x0f\x00\x00(\x00\x00\xff\x01\x00"
+        # Updated to include has_access_selection flag (0x00) after method
+        data = b"\xc4\x01\xc0\x00\x0f\x00\x00(\x00\x00\xff\x01\x00\x00"
         with pytest.raises(ValueError):
             xdlms.ActionRequestFactory.from_bytes(data)
 
@@ -200,12 +206,17 @@ class TestActionRequestFactory:
 
     def test_request_with_list(self):
         """Test parsing ActionRequestWithList."""
+        from dlms_cosem.protocol.xdlms.action import CosemMethodWithSelectiveAccess
+
         request = xdlms.ActionRequestWithList(
             method_list=[
-                cosem.CosemMethod(
-                    interface=enumerations.CosemInterface.ASSOCIATION_LN,
-                    instance=cosem.Obis(a=0, b=0, c=40, d=0, e=0, f=1),
-                    method=1,
+                CosemMethodWithSelectiveAccess(
+                    cosem_method=cosem.CosemMethod(
+                        interface=enumerations.CosemInterface.ASSOCIATION_LN,
+                        instance=cosem.Obis(a=0, b=0, c=40, d=0, e=0, f=1),
+                        method=1,
+                    ),
+                    access_selection=None,
                 ),
             ],
             invoke_id_and_priority=xdlms.InvokeIdAndPriority(invoke_id=1),

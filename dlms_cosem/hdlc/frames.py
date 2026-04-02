@@ -8,6 +8,7 @@ from dlms_cosem.hdlc import address
 from dlms_cosem.hdlc import exceptions as hdlc_exceptions
 from dlms_cosem.hdlc import fields, validators
 from dlms_cosem.hdlc.address import HdlcAddress
+from dlms_cosem.hdlc.parameters import HdlcParameterList
 
 HDLC_FLAG = b"\x7e"
 
@@ -157,30 +158,55 @@ class BaseHdlcFrame(_AbstractHdlcFrame):
 class SetNormalResponseModeFrame(BaseHdlcFrame):
     """
     SetNormalResponseMode Frame (SNRM-frame) is used to start a new HDLC connection.
+
+    The information field can contain HDLC parameter negotiation data in TLV format.
     """
 
     fixed_length_bytes = 5
+    parameters: HdlcParameterList = attr.ib(factory=HdlcParameterList)
 
     @property
     def hcs(self) -> bytes:
         """
-        SetNormalResponseModeFrame is an HDLC S-frame and does not contain an
-        information field. That means that there is no HCS field present, only FCS
-        # TODO: is it present when using the information field as parameter field for
-            negotiating HDLC parameters?
+        Calculate HCS (Header Check Sequence).
+
+        When parameters are present in the information field, HCS is calculated
+        over the header content. Otherwise, SNRM as an S-frame doesn't have HCS.
         """
+        if self.parameters:
+            return HCS.calculate_for(self.header_content)
         return b""
+
+    @property
+    def frame_length(self) -> int:
+        """
+        Calculate frame length.
+
+        When parameters are present, the fixed_length_bytes includes HCS (2 bytes).
+        """
+        base_length = self.fixed_length_bytes
+        if self.parameters:
+            # Include HCS when parameters are present
+            pass  # fixed_length_bytes already accounts for HCS-less base
+        else:
+            # No HCS without parameters
+            pass
+        return (
+            base_length
+            + self.destination_address.length
+            + self.source_address.length
+            + len(self.information)
+            + (2 if self.parameters else 0)  # Add HCS if parameters present
+        )
 
     @property
     def information(self) -> bytes:
         """
-        The information field on an SNRM request can be used to negotiate HDLC
-        connection parameters, (window size, max_frame_length etc.) It is not supported.
+        Return the encoded HDLC parameters for negotiation.
 
-        By not sending any information default values will be assumed.
-        Window size = 1, max transmit size = 128 bytes.
+        If no parameters are set, returns empty bytes (default values will be used).
         """
-        return b""
+        return self.parameters.to_bytes()
 
     def get_control_field(self):
         return fields.SnrmControlField()
@@ -188,14 +214,20 @@ class SetNormalResponseModeFrame(BaseHdlcFrame):
 
 @attr.s(auto_attribs=True)
 class UnNumberedAcknowledgmentFrame(BaseHdlcFrame):
+    """
+    Unnumbered Acknowledgment Frame (UA-frame) is used to accept an SNRM request.
+
+    The information field can contain the negotiated HDLC parameters.
+    """
 
     fixed_length_bytes = 7
+    parameters: HdlcParameterList = attr.ib(factory=HdlcParameterList)
 
     @property
     def frame_length(self) -> int:
-
-        if self.information:
-            # with an informatoin field it should have HSC
+        """Calculate frame length based on whether parameters are present."""
+        if self.parameters or self.payload:
+            # With information field, HCS is included
             fixed = self.fixed_length_bytes
         else:
             fixed = self.fixed_length_bytes - 2
@@ -210,10 +242,14 @@ class UnNumberedAcknowledgmentFrame(BaseHdlcFrame):
     @property
     def information(self) -> bytes:
         """
-        Information field on UA does not contain an LLC as it is not a true
-        information field.
+        Return the information field content.
+
+        For parameter negotiation, returns the encoded parameters.
+        For backward compatibility, also supports raw payload.
         """
         out: List[bytes] = list()
+        if self.parameters:
+            out.append(self.parameters.to_bytes())
         if self.payload:
             out.append(self.payload)
 
@@ -222,13 +258,13 @@ class UnNumberedAcknowledgmentFrame(BaseHdlcFrame):
     @property
     def hcs(self) -> bytes:
         """
-        UnNumberedAcknowledgmentFrame is an HDLC S-frame and does if it does not contain an
-        information field it should also not contain a HCS field. That means that there is no HCS field present, only FCS
+        Calculate HCS (Header Check Sequence).
+
+        UA frame includes HCS when the information field contains parameters.
         """
-        if self.payload:
+        if self.parameters or self.payload:
             return HCS.calculate_for(self.header_content)
-        else:
-            return b""
+        return b""
 
     def get_control_field(self):
         return fields.UaControlField()
@@ -257,7 +293,36 @@ class UnNumberedAcknowledgmentFrame(BaseHdlcFrame):
 
         information = frame_bytes[hcs_position + 2 : -3]
 
-        frame = cls(destination_address, source_address, information)
+        # Try to parse as HDLC parameters, fall back to raw payload
+        parameters = HdlcParameterList()
+        payload = information
+
+        if information:
+            try:
+                # Try to parse as HDLC parameters (TLV format)
+                # Check if it looks like a valid parameter (type, length, value)
+                if len(information) >= 3:
+                    first_byte = information[0]
+                    # Valid parameter types are 0x01-0x05
+                    if 0x01 <= first_byte <= 0x05:
+                        second_byte = information[1]
+                        # Length should match remaining data
+                        if second_byte + 2 == len(information) or (
+                            len(information) > second_byte + 2
+                            and 0x01 <= information[second_byte + 2] <= 0x05
+                        ):
+                            parameters = HdlcParameterList.from_bytes(information)
+                            payload = b""
+            except Exception:
+                # If parsing fails, use as raw payload
+                payload = information
+
+        frame = cls(
+            destination_address,
+            source_address,
+            payload=payload,
+            parameters=parameters,
+        )
 
         if frame.hcs:
             "Some frames might not have hcs so we should not check it."

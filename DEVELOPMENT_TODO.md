@@ -298,46 +298,45 @@ def information(self) -> bytes:
 
 ---
 
-### 3.3 HLS-ISM 支持硄
+### 3.3 HLS-ISM 支持 ✅ 完成
 
-**状态**: 仅支持 HLS-GMAC 和 HLS-Common
+**状态**: 已完成
+**文件**: `dlms_cosem/security.py`, `tests/test_hls_ism.py`
 
 **任务清单**:
-- [ ] 研究 HLS-ISM (SHA-256) 规范
-- [ ] 实现 `HighLevelSecurityIsmAuthentication`
-- [ ] 添加单元测试
+- [x] 研究 HLS-ISM (SHA-256) 规范
+- [x] 实现 `HighLevelSecurityISMAuthentication`
+- [x] 实现 SM4-GCM/SM4-GMAC (中国国密)
+- [x] 实现密钥推导 (KDF)
+- [x] 支持 Security Suite 0~5
+- [x] 添加单元测试 (13 个测试)
 - [ ] 更新文档
 
-**依赖**: 无
-**预计工作量**: 2-3 天
-
+**完成日期**: 2026-04-03
 ---
 
 ## 四、COSEM 对象模型 (Blue Book)
 
-### 4.1 COSEM 接口类库 🟢 P2
+### 4.1 COSEM 接口类库 ✅ 完成
 
-**状态**: 仅基础类，无具体接口类实现
+**状态**: 已完成 30+ 个 COSEM 接口类
+**文件**: `dlms_cosem/cosem/`, `tests/test_cosem_interface_classes.py`
 
-**任务清单**:
-- [ ] 创建 `dlms_cosem.interfaces` 模块
-- [ ] 实现常用接口类:
-  - [ ] `IDispatch` (01) - 脱离/恢复控制
-  - [ ] `IScriptTable` (02) - 脚本表
-  - [ ] `ISchedule` (04) - 调度
-  - [ ] `IClock` (08) - 时钟
-  - [ ] `IPacketStatic` (10) - 静态数据
-  - [ ] `IRegister` (03) / `IRegisterMonitor` (07) - 寄存器
-  - [ ] `IExtendedRegister` (12) - 扩展寄存器
-  - [ ] `IProfileGeneric` (07) - 负荷曲线
-  - [ ] `IGroupDemand` (09) - 需量
-- [ ] 创建接口类工厂
-- [ ] 添加类型注解
-- [ ] 编写文档
+**已实现的接口类**:
+- [x] IC001 Data, IC003 Register, IC005 Demand Register
+- [x] IC006 Register Activation, IC008 Clock, IC009 Script Table
+- [x] IC010 Schedule, IC011 Special Day Table
+- [x] IC021 Register Monitor, IC022 Single Action Schedule
+- [x] IC061 Register Table, IC012 Association SN
+- [x] IC064 Security Setup, IC106 NB-IoT Setup, IC107 LoRaWAN Setup
+- [x] 通信类: LP/RS485/Infrared/Modem/AutoAnswer/ModemConfiguration
+- [x] 电能/功率/电压/电流/功率因数/频率寄存器
+- [x] 事件日志, 费率表 (Season/Week/Day Profile)
+- [x] NB-IoT 传输层 (`dlms_cosem/transport/nbiot.py`)
+- [x] LoRaWAN 传输层 (`dlms_cosem/transport/lorawan.py`)
+- [x] 添加单元测试 (52 个测试)
 
-**依赖**: 无
-**预计工作量**: 10-15 天
-
+**完成日期**: 2026-04-03
 ---
 
 ### 4.2 Profile Generic 解析增强 🟡 P1

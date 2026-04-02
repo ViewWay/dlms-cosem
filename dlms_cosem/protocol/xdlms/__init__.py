@@ -13,6 +13,7 @@ from dlms_cosem.protocol.xdlms.action import (
     ActionResponseNextPblock,
     ActionResponseWithList,
     ActionResponseLastPblock,
+    CosemMethodWithSelectiveAccess,
 )
 from dlms_cosem.protocol.xdlms.confirmed_service_error import ConfirmedServiceError
 from dlms_cosem.protocol.xdlms.conformance import Conformance
@@ -114,4 +115,5 @@ __all__ = [
     "GeneralBlockTransferResponse",
     "BlockTransferStatus",
     "BlockType",
+    "CosemMethodWithSelectiveAccess",
 ]

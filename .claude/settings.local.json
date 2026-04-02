@@ -12,7 +12,13 @@
       "Read(//tmp/**)",
       "Bash(/Users/yimiliya/.openclaw/workspace/dlms-cosem/scripts/dlms-keys show:*)",
       "Bash(/Users/yimiliya/.openclaw/workspace/dlms-cosem/scripts/dlms-keys validate:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(find /Users/yimiliya/.openclaw/workspace/dlms-cosem/dlms_cosem -name \"*.py\" -exec grep -l \"def get\" {} \\\\;)",
+      "Bash(find:*)",
+      "Bash(python -m pytest tests/ -v --tb=short)",
+      "Bash(python:*)",
+      "Bash(grep -n \"TODO\\\\|FIXME\\\\|NotImplemented\\\\|pass$\\\\|#.*missing\\\\|#.*incomplete\" dlms_cosem/ -r --include=\"*.py\")"
     ]
   }
 }
