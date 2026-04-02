@@ -297,7 +297,7 @@ class CosemMethodWithSelectiveAccess:
     def from_bytes(cls, data: bytearray) -> "CosemMethodWithSelectiveAccess":
         # Parse CosemMethod (9 bytes)
         cosem_method = cosem.CosemMethod.from_bytes(bytes(data[:9]))
-        data = data[9:]
+        del data[:9]
 
         # Check for access selection
         has_access = bool(data.pop(0))
@@ -307,7 +307,7 @@ class CosemMethodWithSelectiveAccess:
             access_selection = AccessDescriptorFactory.from_bytes(bytes(data))
             # Move data pointer past the access selection
             access_len = len(access_selection.to_bytes())
-            data = data[access_len:]
+            del data[:access_len]
 
         return cls(
             cosem_method=cosem_method,
