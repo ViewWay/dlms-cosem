@@ -67,7 +67,39 @@ See [docs/key_management.md](docs/key_management.md) for detailed documentation.
 # Documentation
 
 * [Architecture Documentation](docs/ARCHITECTURE.md) - Library architecture and design
+* [API Reference](docs/api_reference.md) - Complete API documentation
+* [Error Audit](docs/error_audit.md) - Error handling audit report
+* [Changelog](CHANGELOG.md) - Version history
 * Full documentation can be found at [www.dlms.dev](https://www.dlms.dev)
+
+# Architecture
+
+```
+┌─────────────────────────────────────────────┐
+│              Application Layer               │
+│  (client.py / server.py / automation.py)    │
+├─────────────────────────────────────────────┤
+│              Protocol Layer                  │
+│  ┌──────────┐  ┌──────────┐  ┌───────────┐ │
+│  │  xDLMS   │  │  ACSE    │  │  Wrappers │ │
+│  │ (APDU)   │  │ (Assoc)  │  │           │ │
+│  └──────────┘  └──────────┘  └───────────┘ │
+├─────────────────────────────────────────────┤
+│              Security Layer                  │
+│  (HLS/LLS/GMAC/GlobalCipher/SM4)            │
+├─────────────────────────────────────────────┤
+│              Transport Layer                 │
+│  ┌────┐  ┌────┐  ┌─────┐  ┌──────────┐    │
+│  │HDLC│  │TCP │  │TLS  │  │NB-IoT/LP │    │
+│  └────┘  └────┘  └─────┘  └──────────┘    │
+├─────────────────────────────────────────────┤
+│              COSEM Objects                   │
+│  (40+ IC Classes: Register, Clock, PG...)   │
+├─────────────────────────────────────────────┤
+│              Data Layer                      │
+│  (A-XDR / BER / DLMS Data Types)            │
+└─────────────────────────────────────────────┘
+```
 
 # Examples
 
