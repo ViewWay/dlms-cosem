@@ -3,11 +3,59 @@
 > 版本: 2026.1.0
 > Python 支持: 3.9+
 > 构建工具: uv
-> 最后更新: 2025-04-01
+> 最后更新: 2026-04-03
 
 ---
 
-## 最近完成的任务 (2025-04-01)
+## 最近完成的任务 (2026-04-03)
+
+### ✅ TLS 传输支持 (P0)
+- 实现了 `dlms_cosem/transport/tls.py`
+- TLS 1.2/1.3 支持（基于 Python ssl 模块）
+- 证书管理（PEM/DER 转换、指纹计算）
+- 双向认证（mTLS）
+- DLMS over TCP/TLS（Wrapper Layer）
+- 连接池管理（TLSConnectionPool）
+- 单元测试（mock SSL）
+
+### ✅ 异步客户端 (P1)
+- 实现了 `dlms_cosem/async_client.py`
+- 基于 asyncio 的异步 DLMS 客户端
+- 异步 HDLC 连接（AsyncHDLCConnection）
+- 异步 COSEM 读写
+- 超时管理 + 连接重试策略（指数退避 + jitter）
+- 异步上下文管理器支持
+
+### ✅ Image Transfer IC068 (P1)
+- 实现了 `dlms_cosem/cosem/image_transfer.py`
+- IC068 Image Transfer（固件升级）
+- Image Activate / Image Block Transfer
+- Image Verify / Image Prepare
+- Femeter OTA 系统对接（FemeterOTA）
+- 状态管理（8 种传输状态）
+
+### ✅ SML 支持 (P2)
+- 实现了 `dlms_cosem/sml/` 模块
+- SML (Smart Message Language) TLV 解析器
+- SML 公开密钥管理
+- SML-to-DLMS OBIS 桥接（SMLToDLMSBridge）
+
+### ✅ 中国国标扩展 (P2)
+- 实现了 `dlms_cosem/china_gb/` 模块
+- GB/T 17215.301 电能计量 OBIS 扩展（25+ OBIS 代码）
+- DLMS/T CP 28（中国本地协议）帧编解码
+- 费率/时段中国标准映射（4 费率 + 跨午夜支持）
+- RS485 通信参数中国标准（2400,8,E,1）
+- GBMeter 标准智能电表模型
+
+### ✅ 测试
+- 新增 98 个测试，总计 788 passed, 0 failed
+- TLS transport 测试、async client 测试
+- Image transfer 测试、SML 解析器测试、China GB 测试
+
+---
+
+## 上一轮完成的任务 (2025-04-01)
 
 ### ✅ General Block Transfer (P0)
 - 实现了 `GeneralBlockTransferRequest` 和 `GeneralBlockTransferResponse` APDU
