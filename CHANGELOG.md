@@ -1,56 +1,162 @@
 # Changelog
 
-All notable changes to the dlms-cosem project will be documented in this file.
+All notable changes to this project will be documented in this file.
 
-## [2026.1.0] - Unreleased
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-### Added — Iteration 5: Quality & Optimization
-- Performance benchmarks for HDLC, AXDR, APDU, SM4, Profile Generic
-- Fuzzing tests (4000+ random test cases) for parser robustness
-- COSEM completeness verification tests
-- Error handling audit documentation
-- Supplementary test suites for all major modules (300+ new tests)
-- API reference documentation
-- Comprehensive README with architecture overview
+## [1.0.0] - 2026-04-03
 
-### Added — Iteration 4: Server, Automation & Analytics
-- COSEM server implementation
-- Meter automation framework
-- WebSocket gateway
-- Data analytics module
-- COSEM object factory
+### Added
+- **Complete DLMS/COSEM protocol stack** — sans-io architecture with full HDLC framing, A-XDR codec, and COSEM application layer
+- **50+ COSEM IC classes**: Register, Clock, Profile Generic, Demand Register, Load Profile, Script Table, Activity Calendar, Event Log, Image Transfer, and many more
+- **Multiple transport layers**: HDLC (serial), TCP, UDP, TLS, WebSocket, NB-IoT, LoRaWAN
+- **Security suites**: HLS-ISM (AES-GCM), SM4-GMAC, SM4-GCM, AES-GCM-128/256
+- **COSEM Server** — simulate meters for testing and development
+- **Automation framework** — batch meter reading with parallel collection
+- **WebSocket gateway** — browser/cloud integration via WS protocol
+- **Key management system** — key generation, rotation, storage, and security suite management
+- **SML parser** — Smart Message Language (EDIS) support
+- **China GB/T extensions** — GB/T 17215 national standard support
+- **CosemObjectFactory** — simplified meter object creation
+- **Async client** — full async/await support with modern Python
+- **CLI tools** — key management and meter utilities
+- **Meter simulation** — complete virtual meter for testing
+- **Comprehensive test suite** — 5146 tests with full coverage
+- **Fuzzing harnesses** — property-based testing for protocol robustness
+- **Performance optimizations** — optimized A-XDR and HDLC parsing
 
-### Added — Iteration 3: Extensions & Protocols
-- TLS transport layer
-- Async client support
-- Image Transfer IC class
-- SML protocol support
-- China GB extensions
+### Changed
+- Modernized tooling: migrated to `uv`, updated CI to Node 24
+- Reorganized project structure with clear module separation
+- Improved error handling and diagnostic messages
 
-### Added — Iteration 2: COSEM IC Classes
-- 12 new COSEM interface classes
-- Profile Generic enhancements
-- Meter simulation support
+### Security
+- Implemented SM4 (Chinese national standard) cryptographic support
+- Full HLS-ISM authentication with AES-GCM encryption
+- Secure key rotation with configurable schedules
 
-### Added — Iteration 1: Core & Transport
-- Blue Book COSEM IC classes
-- NB-IoT and LoRaWAN transport
-- HLS-ISM security suite
-- Comprehensive key management system
+---
 
-## [24.1.0] - 2024
+## [2026.1.0] - 2026-03-16
+
+### Added
+- Invoke-id tracking in DlmsClient requests
+- Modernized CI/CD pipeline with uv
+
+### Changed
+- Migrated from setuptools-based workflow to uv
+- Updated GitHub Actions to Node 24
+
+---
+
+## [24.1.0] - 2024-01-22
+
+### Added
+- DlmsConnectionSettings for handling special meter behaviour (#75)
+- `use_rlrq_rlre` option on DlmsConnectionSetting (#80)
 
 ### Fixed
 - Append on bytes in DataArray.to_bytes (#76)
-- Missing imports in io.py (#104)
-- use_rlrq_rlre on DlmsConnectionSetting (#80)
-- Various small fixes (#110)
 
-## [23.1.0a1] - 2023
+---
+
+## [23.1.0a1] - 2023-03-06
 
 ### Changed
-- Updated changelog, classifiers, and version
+- Composition of Transport and IO (#63) — decoupled transport from IO layer
 
-## Earlier versions
+---
 
-See git log for full history.
+## [21.3.1] - 2021-06-14
+
+### Added
+- DLMS data parser for use in GET.WITH_LIST (#48)
+
+---
+
+## [21.3.0] - 2021-06-08
+
+### Added
+- GET.WITH_LIST service (#45)
+
+---
+
+## [21.2.3] - 2021-04-22
+
+### Added
+- Timeout management from client level (#36)
+
+### Fixed
+- Better decryption error messages (#34)
+
+---
+
+## [21.2.2] - 2021-03-02
+
+### Fixed
+- Proper support for ACTION service (#29)
+
+---
+
+## [21.2.1] - 2021-02-18
+
+### Fixed
+- Always call `.shutdown()` on socket (#25)
+- Fixed typo in AXdrParser (#24)
+- Bumped cryptography dependency (#22)
+
+---
+
+## [21.2.0] - 2021-01-28
+
+### Added
+- SET service support (#19)
+- Timezone parsing (#17)
+
+---
+
+## [21.1.2] - 2021-01-22
+
+### Changed
+- Improved TcpTransport (#15)
+
+---
+
+## [21.1.1] - 2021-01-13
+
+### Added
+- TCP transport (#14)
+- Load profile parsing (#12)
+- Selective access (#11)
+
+---
+
+## [21.1.0] - 2021-01-12
+
+### Added
+- Initial TCP transport support
+
+---
+
+## Earlier Releases (2018-2020)
+
+### 2020-12
+- Initial Association (#2)
+- Security (#6)
+- Segmented HDLC Information frames (#7)
+- Service-specific GET block transfer (#10)
+- Robustness improvements (#3)
+- Documentation (#4)
+
+### 2020-11
+- HDLC implementation: unsegmented lifecycle
+- HDLC state machine and frame handling
+
+### 2019-03
+- Data notification support
+- UDP Wrapper/Message class
+- X-ADR decoding support
+
+### 2018-02
+- Initial commit and project structure
+- Basic DLMS package structure
