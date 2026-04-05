@@ -52,6 +52,23 @@ def _register_classes() -> Dict[int, Type]:
     from dlms_cosem.cosem.standard_event_log import StandardEventCode as StandardEventLog
     from dlms_cosem.cosem.utility_event_log import UtilityEventLogEntry as UtilityEventLog
     from dlms_cosem.cosem.event_log import EventLogEntry as EventLog
+    # New IC classes
+    from dlms_cosem.cosem.ipv4_setup import IPv4Setup
+    from dlms_cosem.cosem.gprs_modem_setup import GPRSSetup as GprsModemSetup
+    from dlms_cosem.cosem.push_setup import PushSetup
+    from dlms_cosem.cosem.disconnect_control import DisconnectControl
+    from dlms_cosem.cosem.limiter import Limiter
+    from dlms_cosem.cosem.mbus_client import MBusClient
+    from dlms_cosem.cosem.parameter_monitor import ParameterMonitor
+    from dlms_cosem.cosem.sensor_manager import SensorManager
+    from dlms_cosem.cosem.ntp_setup import NTPSetup
+    from dlms_cosem.cosem.account import Account
+    from dlms_cosem.cosem.credit import Credit
+    from dlms_cosem.cosem.charge import Charge
+    from dlms_cosem.cosem.arbitrator import Arbitrator
+    from dlms_cosem.cosem.mac_address_setup import MACAddressSetup
+    from dlms_cosem.cosem.ppp_setup import PPPSetup
+    from dlms_cosem.cosem.smtp_setup import SMTPSetup
 
     return {
         enums.CosemInterface.DATA: Data,
@@ -81,6 +98,23 @@ def _register_classes() -> Dict[int, Type]:
         108: GprsSetup,
         109: TcpUdpSetup,
         110: ZigbeeSetup,
+        # New IC classes
+        enums.CosemInterface.IPV4_SETUP: IPv4Setup,
+        enums.CosemInterface.GPRS_MODEM_SETUP: GprsModemSetup,
+        enums.CosemInterface.PUSH: PushSetup,
+        enums.CosemInterface.DISCONNECT_CONTROL: DisconnectControl,
+        enums.CosemInterface.LIMITER: Limiter,
+        enums.CosemInterface.MBUS_CLIENT: MBusClient,
+        enums.CosemInterface.PARAMETER_MONITOR: ParameterMonitor,
+        enums.CosemInterface.SENSOR_MANAGER: SensorManager,
+        enums.CosemInterface.NTP_SETUP: NTPSetup,
+        enums.CosemInterface.ACCOUNT: Account,
+        enums.CosemInterface.CREDIT: Credit,
+        enums.CosemInterface.CHARGE: Charge,
+        enums.CosemInterface.ARBITRATOR: Arbitrator,
+        enums.CosemInterface.MAC_ADDRESS_SETUP: MACAddressSetup,
+        enums.CosemInterface.PPP_SETUP: PPPSetup,
+        enums.CosemInterface.SMTP_SETUP: SMTPSetup,
     }
 
 
