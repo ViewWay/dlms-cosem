@@ -70,7 +70,25 @@ class TestCosemInterface:
         assert enums.CosemInterface.AUTO_ANSWER == 28
 
     def test_auto_connect(self):
-        assert enums.CosemInterface.AUTO_CONNECT == 29
+        assert enums.CosemInterface.AUTO_CONNECT == 114
+
+    def test_value_table(self):
+        assert enums.CosemInterface.VALUE_TABLE == 29
+
+    def test_iec_public_key(self):
+        assert enums.CosemInterface.IEC_PUBLIC_KEY == 90
+
+    def test_mbus_diagnostic(self):
+        assert enums.CosemInterface.MBUS_DIAGNOSTIC == 110
+
+    def test_power_quality_monitor(self):
+        assert enums.CosemInterface.POWER_QUALITY_MONITOR == 200
+
+    def test_harmonic_monitor(self):
+        assert enums.CosemInterface.HARMONIC_MONITOR == 201
+
+    def test_sag_swell_monitor(self):
+        assert enums.CosemInterface.SAG_SWELL_MONITOR == 202
 
     def test_iec_hdlc_setup(self):
         assert enums.CosemInterface.IEC_HDLC_SETUP == 23

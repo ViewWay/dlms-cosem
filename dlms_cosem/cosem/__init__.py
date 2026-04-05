@@ -54,6 +54,20 @@ from dlms_cosem.cosem.voltage import create_voltage_register
 from dlms_cosem.cosem.current import create_current_register
 from dlms_cosem.cosem.power_factor import create_pf_register
 from dlms_cosem.cosem.frequency import create_frequency_register
+from dlms_cosem.cosem.value_table import ValueTable, ValueEntry, ValueDescriptor
+from dlms_cosem.cosem.iec_public_key import IecPublicKey, KeyAlgorithm, KeyUsage
+from dlms_cosem.cosem.mbus_diagnostic import MbusDiagnostic
+from dlms_cosem.cosem.power_quality_monitor import PowerQualityMonitor
+from dlms_cosem.cosem.harmonic_monitor import HarmonicMonitor, MonitoringMode
+from dlms_cosem.cosem.sag_swell_monitor import SagSwellMonitor
+from dlms_cosem.cosem.compact_data import CompactData, CompactDataField
+from dlms_cosem.cosem.status_mapping import StatusMapping, StatusMappingEntry
+from dlms_cosem.cosem.cosem_data_protection import CosemDataProtection, ProtectedObject
+from dlms_cosem.cosem.function_control import FunctionControl, FunctionControlEntry
+from dlms_cosem.cosem.array_manager import ArrayManager
+from dlms_cosem.cosem.comm_port_protection import CommPortProtection, ProtectedPort
+from dlms_cosem.cosem.activity_calendar import ActivityCalendar, ActivityPeriod
+from dlms_cosem.cosem.sap_assignment import SapAssignment, SapAssignmentEntry
 
 __all__ = [
     "CosemAttribute", "CosemMethod", "Obis", "CosemAttributeWithSelection",
@@ -79,4 +93,20 @@ __all__ = [
     # OBIS constants
     "OBIS_ACTIVE_IMPORT", "OBIS_ACTIVE_EXPORT",
     "OBIS_REACTIVE_IMPORT", "OBIS_REACTIVE_EXPORT",
+    # New IC classes
+    "ValueTable", "ValueEntry", "ValueDescriptor",
+    "IecPublicKey", "KeyAlgorithm", "KeyUsage",
+    "MbusDiagnostic",
+    "PowerQualityMonitor",
+    "HarmonicMonitor", "MonitoringMode",
+    "SagSwellMonitor",
+    # Additional new IC classes
+    "CompactData", "CompactDataField",
+    "StatusMapping", "StatusMappingEntry",
+    "CosemDataProtection", "ProtectedObject",
+    "FunctionControl", "FunctionControlEntry",
+    "ArrayManager",
+    "CommPortProtection", "ProtectedPort",
+    "ActivityCalendar", "ActivityPeriod",
+    "SapAssignment", "SapAssignmentEntry",
 ]

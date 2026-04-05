@@ -69,6 +69,20 @@ def _register_classes() -> Dict[int, Type]:
     from dlms_cosem.cosem.mac_address_setup import MACAddressSetup
     from dlms_cosem.cosem.ppp_setup import PPPSetup
     from dlms_cosem.cosem.smtp_setup import SMTPSetup
+    from dlms_cosem.cosem.value_table import ValueTable
+    from dlms_cosem.cosem.iec_public_key import IecPublicKey
+    from dlms_cosem.cosem.mbus_diagnostic import MbusDiagnostic
+    from dlms_cosem.cosem.power_quality_monitor import PowerQualityMonitor
+    from dlms_cosem.cosem.harmonic_monitor import HarmonicMonitor
+    from dlms_cosem.cosem.sag_swell_monitor import SagSwellMonitor
+    from dlms_cosem.cosem.compact_data import CompactData
+    from dlms_cosem.cosem.status_mapping import StatusMapping
+    from dlms_cosem.cosem.cosem_data_protection import CosemDataProtection
+    from dlms_cosem.cosem.function_control import FunctionControl
+    from dlms_cosem.cosem.array_manager import ArrayManager
+    from dlms_cosem.cosem.comm_port_protection import CommPortProtection
+    from dlms_cosem.cosem.activity_calendar import ActivityCalendar
+    from dlms_cosem.cosem.sap_assignment import SapAssignment
 
     return {
         enums.CosemInterface.DATA: Data,
@@ -115,6 +129,20 @@ def _register_classes() -> Dict[int, Type]:
         enums.CosemInterface.MAC_ADDRESS_SETUP: MACAddressSetup,
         enums.CosemInterface.PPP_SETUP: PPPSetup,
         enums.CosemInterface.SMTP_SETUP: SMTPSetup,
+        enums.CosemInterface.VALUE_TABLE: ValueTable,
+        enums.CosemInterface.IEC_PUBLIC_KEY: IecPublicKey,
+        enums.CosemInterface.MBUS_DIAGNOSTIC: MbusDiagnostic,
+        enums.CosemInterface.POWER_QUALITY_MONITOR: PowerQualityMonitor,
+        enums.CosemInterface.HARMONIC_MONITOR: HarmonicMonitor,
+        enums.CosemInterface.SAG_SWELL_MONITOR: SagSwellMonitor,
+        enums.CosemInterface.COMPACT_DATA: CompactData,
+        enums.CosemInterface.STATUS_MAPPING: StatusMapping,
+        enums.CosemInterface.COSEM_DATA_PROTECTION: CosemDataProtection,
+        enums.CosemInterface.FUNCTION_CONTROL: FunctionControl,
+        enums.CosemInterface.ARRAY_MANAGER: ArrayManager,
+        enums.CosemInterface.COMMUNICATION_PORT_PROTECTION: CommPortProtection,
+        enums.CosemInterface.ACTIVITY_CALENDAR: ActivityCalendar,
+        enums.CosemInterface.SAP_ASSIGNMENT: SapAssignment,
     }
 
 
