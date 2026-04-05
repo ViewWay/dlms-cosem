@@ -316,16 +316,16 @@ dlms_cosem/
 ├── ws_gateway.py            # WebSocket gateway
 ├── cli/                     # CLI tools
 │   └── dlms_keys.py         # Key management CLI
-└── tests/                   # 5146 tests
+└── tests/                   # 5178 tests
 ```
 
 ## Performance
 
-Benchmark on Python 3.13, Apple M2, 5146 tests:
+Benchmark on Python 3.13, Apple M2, 5178 tests:
 
 | Metric | Value |
 |--------|-------|
-| Test suite | 5146 passed, 0 failed |
+| Test suite | 5178 passed, 0 failed |
 | A-XDR encode/decode | ~1M ops/sec |
 | HDLC frame parse | ~500K frames/sec |
 | Profile Generic (1000 entries) | ~2ms decode |
