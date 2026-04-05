@@ -100,3 +100,8 @@ exclude = '''
 [tool.isort]
 profile = "black"
 multi_line_output = 3
+
+[dependency-groups]
+dev = [
+    "hypothesis>=6.141.1",
+]
