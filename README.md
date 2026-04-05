@@ -2,7 +2,7 @@
 
 **Complete DLMS/COSEM protocol stack for Python** — sans-io implementation with HDLC framing, A-XDR codec, 50+ COSEM IC classes, multiple transport layers, security suites, server, automation, and analytics.
 
-[![Tests](https://img.shields.io/badge/tests-5146%20passed-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-5178%20passed-brightgreen)]()
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)]()
 [![License: BSL 1.1](https://img.shields.io/badge/license-BSL%201.1-orange.svg)]()
 
