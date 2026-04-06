@@ -7,16 +7,40 @@ nav:
   - About DLMS/COSEM: dlms_cosem.md
   - Getting Started:
       - Connect to your meter: connect_to_your_meter.md
+      - Quick Examples: examples.md
+  - API Reference:
+      - API Overview: api_reference.md
+      - Client API: api_client.md
+      - Server API: api_server.md
+      - Transport API: api_transport.md
+  - Architecture:
+      - Design Principles: design_principles.md
+      - Architecture: ARCHITECTURE.md
+      - Implementation Status: IMPLEMENTATION_STATUS.md
+  - Security:
+      - Key Management: key_management.md
+      - Security Suites: security_suites.md
+  - Guides:
+      - Async Client: guide_async.md
+      - WebSocket Gateway: guide_websocket.md
+      - Custom IC Classes: guide_custom_ic.md
+      - Migrating from 0.x to 1.0: migration_1_0.md
+  - Troubleshooting:
+      - Common Issues: troubleshooting.md
+      - Error Codes: error_codes.md
+  - Development:
+      - Contributing: contributing.md
+      - Release Process: release_process.md
 
 
 theme:
   name: material
 
 
-copyright: 'Copyright &copy; 2020-2021 Palmlund Wahlgren Innovative Technology AB'
+copyright: 'Copyright &copy; 2020-2026 Palmlund Wahlgren Innovative Technology AB'
 
-repo_url: https://github.com/pwitab/dlms-cosem
-repo_name: pwitab/dlms-cosem
+repo_url: https://github.com/ViewWay/dlms-cosem
+repo_name: ViewWay/dlms-cosem
 
 
 markdown_extensions:
