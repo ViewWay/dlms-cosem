@@ -68,6 +68,16 @@ from dlms_cosem.cosem.C211_ArrayManager import ArrayManager
 from dlms_cosem.cosem.C115_CommPortProtection import CommPortProtection, ProtectedPort
 from dlms_cosem.cosem.C18_ActivityCalendar import ActivityCalendar, ActivityPeriod
 from dlms_cosem.cosem.C53_SapAssignment import SapAssignment, SapAssignmentEntry
+from dlms_cosem.cosem.C30_ValueDisplay import ValueDisplay
+from dlms_cosem.cosem.C31_LocalDisplay import LocalDisplay
+from dlms_cosem.cosem.C36_FirmwareManagement import FirmwareManagement, FirmwareComponent
+from dlms_cosem.cosem.C37_Multiplier import Multiplier
+from dlms_cosem.cosem.C63_StandardReadout import StandardReadout
+from dlms_cosem.cosem.C64_Billing import Billing
+from dlms_cosem.cosem.C70_Calendar import Calendar, SeasonEntry, WeekDayProfile
+from dlms_cosem.cosem.C73_ClockControl import ClockControl
+from dlms_cosem.cosem.C118_LoadProfile import LoadProfile
+from dlms_cosem.cosem.C207_Total import Total
 
 __all__ = [
     "CosemAttribute", "CosemMethod", "Obis", "CosemAttributeWithSelection",
@@ -109,4 +119,14 @@ __all__ = [
     "CommPortProtection", "ProtectedPort",
     "ActivityCalendar", "ActivityPeriod",
     "SapAssignment", "SapAssignmentEntry",
+    # Extended IC classes
+    "ValueDisplay", "LocalDisplay",
+    "FirmwareManagement", "FirmwareComponent",
+    "Multiplier",
+    "StandardReadout",
+    "Billing",
+    "Calendar", "SeasonEntry", "WeekDayProfile",
+    "ClockControl",
+    "LoadProfile",
+    "Total",
 ]

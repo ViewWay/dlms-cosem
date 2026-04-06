@@ -83,6 +83,16 @@ def _register_classes() -> Dict[int, Type]:
     from dlms_cosem.cosem.C115_CommPortProtection import CommPortProtection
     from dlms_cosem.cosem.C18_ActivityCalendar import ActivityCalendar
     from dlms_cosem.cosem.C53_SapAssignment import SapAssignment
+    from dlms_cosem.cosem.C30_ValueDisplay import ValueDisplay
+    from dlms_cosem.cosem.C31_LocalDisplay import LocalDisplay
+    from dlms_cosem.cosem.C36_FirmwareManagement import FirmwareManagement
+    from dlms_cosem.cosem.C37_Multiplier import Multiplier
+    from dlms_cosem.cosem.C63_StandardReadout import StandardReadout
+    from dlms_cosem.cosem.C64_Billing import Billing
+    from dlms_cosem.cosem.C70_Calendar import Calendar
+    from dlms_cosem.cosem.C73_ClockControl import ClockControl
+    from dlms_cosem.cosem.C118_LoadProfile import LoadProfile
+    from dlms_cosem.cosem.C207_Total import Total
 
     return {
         enums.CosemInterface.DATA: Data,
@@ -143,6 +153,16 @@ def _register_classes() -> Dict[int, Type]:
         enums.CosemInterface.COMMUNICATION_PORT_PROTECTION: CommPortProtection,
         enums.CosemInterface.ACTIVITY_CALENDAR: ActivityCalendar,
         enums.CosemInterface.SAP_ASSIGNMENT: SapAssignment,
+        enums.CosemInterface.VALUE_DISPLAY: ValueDisplay,
+        enums.CosemInterface.LOCAL_DISPLAY: LocalDisplay,
+        enums.CosemInterface.FIRMWARE_MANAGEMENT: FirmwareManagement,
+        enums.CosemInterface.MULTIPLIER: Multiplier,
+        enums.CosemInterface.STANDARD_READOUT: StandardReadout,
+        enums.CosemInterface.BILLING: Billing,
+        enums.CosemInterface.CALENDAR: Calendar,
+        enums.CosemInterface.CLOCK_CONTROL: ClockControl,
+        enums.CosemInterface.LOAD_PROFILE: LoadProfile,
+        enums.CosemInterface.TOTAL: Total,
     }
 
 
