@@ -240,3 +240,88 @@ def connection_with_hls(
         global_authentication_key=global_authentication_key,
         security_suite=0,
     )
+
+
+
+# ─── Mock Transport (类 pdlms) ────────────────────────────────
+
+
+class MockTransport:
+    """
+    可配置的 Mock 传输：记录每次 send 的输入，按队列返回预设响应。
+    用于 client/connection 测试。
+    """
+
+    def __init__(self, responses=None):
+        self.client_logical_address = 16
+        self.server_logical_address = 1
+        self.timeout = 10
+        self.sent: list = []
+        self._responses = list(responses or [])
+
+    def connect(self):
+        pass
+
+    def disconnect(self):
+        pass
+
+    def send(self, bytes_to_send: bytes) -> bytes:
+        """记录发送的字节，从队列返回预设响应。"""
+        self.sent.append(bytes_to_send)
+        if self._responses:
+            return self._responses.pop(0)
+        return b""
+
+    def enqueue_response(self, data: bytes):
+        """追加响应到队列。"""
+        self._responses.append(data)
+
+
+
+@pytest.fixture()
+def mock_transport():
+    """返回一个空的 Mock 传输，可 enqueue_response 后供测试使用。"""
+    return MockTransport()
+
+
+
+# ─── Golden Vector 固定字节样本 ────────────────────────────
+
+# 最小 AARE 接受：0x61 + 长度 + 0xA1 上下文 + 0xA2 result(0)
+SAMPLE_AARE_ACCEPTED = bytes.fromhex(
+    "61 29 A1 09 06 07 60 85 74 05 08 01 01 A2 01 00".replace(" ", "")
+)
+
+
+# 8 字节 system title 与 16 字节密钥（GCM 测试用）
+SAMPLE_CLIENT_SYSTEM_TITLE = b"dlms\x00\x01\x02\x03\x04"  # 8 bytes
+SAMPLE_METER_SYSTEM_TITLE = b"meter123"
+SAMPLE_ENCRYPTION_KEY = bytes(range(16))  # 0x00..0x0F
+SAMPLE_AUTH_KEY = bytes(range(16, 32))     # 0x10..0x1F
+
+
+
+@pytest.fixture()
+def sample_aare_accepted():
+    return SAMPLE_AARE_ACCEPTED
+
+
+
+@pytest.fixture()
+def sample_client_system_title():
+    return SAMPLE_CLIENT_SYSTEM_TITLE
+
+
+@pytest.fixture()
+def sample_meter_system_title():
+    return SAMPLE_METER_SYSTEM_TITLE
+
+
+@pytest.fixture()
+def sample_encryption_key():
+    return SAMPLE_ENCRYPTION_KEY
+
+
+@pytest.fixture()
+def sample_auth_key():
+    return SAMPLE_AUTH_KEY
