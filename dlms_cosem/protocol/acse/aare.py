@@ -81,8 +81,8 @@ class ApplicationAssociationResponse(acse_base.AbstractAcseApdu):
         accepted the application association request. In the case of local confirmation
         in shows if the client accepted
 
-    # TODO: Exactly what is the difference between remot and local confirmation.
-    # My guess is that it is always remote for this library's usage.
+    Remote confirmation means the server accepted/rejected the request.
+    Local confirmation means the client's own decision (typically always remote in this library).
 
      :parameter meter_system_title:  It is transferred in the `responding_ap_title`
         portion from the DLMS ASN1 specs.
@@ -205,7 +205,6 @@ class ApplicationAssociationResponse(acse_base.AbstractAcseApdu):
 
         # use the data in tags to go through the bytes and create objects.
         while True:
-            # TODO: this does not take into account when defining objects in dict and not using them.
             object_tag = aare_data.pop(0)
             object_desc = ApplicationAssociationResponse.PARSE_TAGS.get(
                 object_tag, None

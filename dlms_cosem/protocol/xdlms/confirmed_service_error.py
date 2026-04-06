@@ -76,8 +76,8 @@ class ConfirmedServiceError(AbstractXDlmsApdu):
         return cls(**result)
 
     def to_bytes(self) -> bytes:
-        # TODO: No good handling of reversing choice in A-XDR. Just setting it
-        #  to 01 InitiateError
+        # The choice is hardcoded to 01 (InitiateError) as there is only
+        # one error type variant in the confirmed service error.
 
         rev_error_map = {y: x for x, y in ErrorFactory.ERROR_TYPE_MAP.items()}
         error_type_id = rev_error_map[type(self.error)]

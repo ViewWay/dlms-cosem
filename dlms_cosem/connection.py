@@ -146,13 +146,7 @@ class DlmsConnection:
     meter_system_title: Optional[bytes] = attr.ib(default=None)
 
     # # Meter authentication method.
-    # # TODO: this should not be set to None. Should not be optional.
-    # authentication_method: Optional[enums.AuthenticationMechanism] = attr.ib(
-    #     default=None
-    # )
-    # # Low Level Security (LLS) password
-    # password: Optional[bytes] = attr.ib(default=None)
-    #
+
     # # HLS challenge length.
     # challenge_length: int = attr.ib(default=32)
     #

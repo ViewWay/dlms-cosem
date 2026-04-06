@@ -11,7 +11,7 @@ class UserInformation:
     UserInformation holds InitiateRequests for AARQ and InitiateResponse for AARE.
     In case of error it can hold an ConformedServiceErrorAPDU in the AARE.
     In case of encryption the user-information holds ciphered APDUs. Either global-ciper
-    or dedicated-cipher #TODO: is dedicated reasonable since no association has started.
+    or dedicated-cipher (dedicated ciphering is used before a full association is established).
 
     All the APDUs held by the user information is encoded in X-ADR but the AARQ/AARE are
     encoded in BER. To be able to make it distinct the content of the endoed XDLMS-APDU

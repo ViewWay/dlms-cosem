@@ -332,9 +332,8 @@ class DlmsClient:
             )
 
         if self.should_send_hls_reply():
-            # TODO: wrap hls logic in method
             try:
-                hls_response = self.send_hls_reply()
+                hls_response = self._perform_hls_reply()
             except ActionError as e:
                 raise HLSError from e
 
@@ -361,7 +360,8 @@ class DlmsClient:
             == state.SHOULD_SEND_HLS_SEVER_CHALLENGE_RESULT
         )
 
-    def send_hls_reply(self) -> Optional[bytes]:
+    def _perform_hls_reply(self) -> Optional[bytes]:
+        """Send HLS reply and return response data."""
         return self.action(
             method=cosem.CosemMethod(
                 enumerations.CosemInterface.ASSOCIATION_LN,

@@ -36,7 +36,7 @@ class AppContextName(DLMSObjectIdentifier):
     are allowed.
     """
 
-    # TODO: Can this be a bit more generalized??
+    # Uses integer-based context identification per DLMS/COSEM spec.
     app_context: ClassVar[int] = 1
 
     valid_context_ids: ClassVar[List[int]] = [1, 2, 3, 4]

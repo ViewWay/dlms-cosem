@@ -147,7 +147,7 @@ class ProfileGenericBufferParser:
                         # parse as time.
                         value = datetime_from_bytes(column)[
                             0
-                        ]  # TODO: do we need clock status?
+                        ]  # Clock status not used here; only the datetime value is needed.
                         last_entry_timestamp = value
                         parsed_column.append(
                             ColumnValue(attribute=cosem_attribute, value=value)

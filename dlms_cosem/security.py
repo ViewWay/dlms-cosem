@@ -392,11 +392,6 @@ class SecurityConfigValidator:
         )
 
 
-# TODO: Is there a reason to support only encrypted or only authenthicated data?
-#   only encrypted: additonal_data = b"". Dont add tag.
-#   only authenticated: additional_data = security_control + auth_key + plain_text
-
-
 def encrypt(
     security_control: SecurityControlField,
     system_title: bytes,

@@ -940,7 +940,6 @@ class ActionResponseWithList(AbstractXDlmsApdu):
                 else:
                     choice = data.pop(0)
                     if choice == 0:  # Data
-                        # TODO: Parse the data
                         response_data = bytes(data)
                         response_list.append((status, response_data))
                         break

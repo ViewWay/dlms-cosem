@@ -2,8 +2,6 @@ from typing import *
 
 import attr
 
-# TODO: when using ciphered apdus we will get other apdus. (33 64) global or dedicated cipered iniitate requests
-
 
 @attr.s(auto_attribs=True)
 class Conformance:
@@ -24,8 +22,6 @@ class Conformance:
 
     So for Application 31 the tag is 0x01011111 + 0b00011111 = 0x5f 0x1F.
 
-    # TODO: how to code than.....
-
     But in the example they encode it {0x5F 0x1F {length=0x04} {number of unused bits last byte} {3x byte for bitstring(24}}
     The ASN.1 shoudl give 0x5
 
@@ -33,7 +29,8 @@ class Conformance:
     Since they count the bits from left to right. So bit 0 is the MSB.
     The placement in this class sets them as bit 0 is LSB.
 
-    # TODO: Should also be set up at the assosiation to track the negotiated.
+    Note: Conformance is negotiated during association setup. The negotiated
+    conformance should be tracked separately after AARE is received.
     """
 
     general_protection: bool = attr.ib(default=False)

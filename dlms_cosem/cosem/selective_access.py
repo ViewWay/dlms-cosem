@@ -81,8 +81,9 @@ class RangeDescriptor:
         if not self.selected_values:
             out.extend(b"\x01\x00")  # empty array for selected values means all columns
         else:
-            raise NotImplementedError()
-            # TODO: implement selected values
+            raise NotImplementedError(
+                "Selected values filtering is not yet implemented."
+            )
 
         return bytes(out)
 

@@ -237,8 +237,6 @@ def utc_offset_minutes(offset_minutes: Optional[int]) -> Optional[tzoffset]:
     To make it harder some companion standard is not using the the standard way of
     deviation from localtime but the deviation from UTC.
 
-    # TODO: We need a way to handle different ways of interpretating the timezone offset.
-
     """
     if offset_minutes:
         return tzoffset(name=None, offset=-(offset_minutes * 60))

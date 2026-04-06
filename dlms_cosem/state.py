@@ -86,7 +86,7 @@ HLS_DONE = make_sentinel("HLS_DONE")
 
 NEED_DATA = make_sentinel("NEED_DATA")
 
-# TODO: block handling is not working with this state layout.
+# Note: Block transfer handling requires additional state transitions not yet modeled here.
 
 DLMS_STATE_TRANSITIONS = {
     NO_ASSOCIATION: {acse.ApplicationAssociationRequest: AWAITING_ASSOCIATION_RESPONSE},

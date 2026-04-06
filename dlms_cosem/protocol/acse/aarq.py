@@ -150,13 +150,11 @@ class ApplicationAssociationRequest:
         default=None
     )
     ciphered: bool = attr.ib(default=False)
-    # TODO: Can we rename this to password? Would be nice to pass it as bytes or str.
+    # Also known as password; accepts bytes for LLS/HLS authentication.
     authentication_value: Optional[bytes] = attr.ib(default=None)
-    # TODO: validate that a ciphered InitiateReqest is used when ciphering is True.
     calling_ae_invocation_identifier: Optional[bytes] = attr.ib(default=None)
 
-    # Not really used
-    # TODO: Should we keep them?
+    # Retained for BER encoding compatibility but rarely used in practice.
     called_ap_title: Optional[bytes] = attr.ib(default=None)
     called_ae_qualifier: Optional[bytes] = attr.ib(default=None)
     called_ap_invocation_identifier: Optional[bytes] = attr.ib(default=None)
@@ -227,7 +225,6 @@ class ApplicationAssociationRequest:
         object_dict = dict()
         # use the data in tags to go through the bytes and create objects.
         while True:
-            # TODO: this does not take into account when defining objects in dict and not using them.
             object_tag = aarq_data.pop(0)
             object_desc = ApplicationAssociationRequest.PARSE_TAGS.get(object_tag, None)
             if object_desc is None:

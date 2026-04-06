@@ -152,7 +152,7 @@ class BooleanData(BaseDlmsData):
     @classmethod
     def from_bytes(cls, bytes_data: bytes):
         value = bool(int.from_bytes(bytes_data, "big"))
-        return cls(value)  # TODO: test this.
+        return cls(value)
 
 
 @attr.s(auto_attribs=True)

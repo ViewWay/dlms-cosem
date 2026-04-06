@@ -303,9 +303,6 @@ class CosemInterface(IntEnum):
     IEC_14908_PROTOCOL_STATUS = 132
     IEC_14908_DIAGNOSTICS = 133
 
-    # TODO: how do we represent different versions of interface classes.
-    #   I guess the python class representing the interface should have the versions
-    #   Like ProfileGenericV1, ProfileGerericV2
 
 
 @unique
@@ -360,8 +357,7 @@ class AcseServiceProviderDiagnostics(IntEnum):
 class AssociationResult(IntEnum):
     ACCEPTED = 0
     REJECTED_PERMANENT = 1
-    REJECTED_TRANSIENT = 2
-    # TODO: What does transient rejection mean?
+    REJECTED_TRANSIENT = 2  # Temporary rejection; client may retry later
 
 
 class ActionResultStatus(IntEnum):
