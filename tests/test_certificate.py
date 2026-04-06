@@ -5,8 +5,9 @@ Tests for X.509 certificate management
 import time
 import pytest
 
-from dlms_cosem.security.sm2 import sm2_generate_keypair, sm2_public_key_from_bytes
-from dlms_cosem.security.certificate import (
+from dlms_cosem.security import (
+    sm2_generate_keypair,
+    SM2PublicKey,
     Certificate,
     CertificateStore,
     Validity,

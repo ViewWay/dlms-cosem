@@ -4,13 +4,10 @@ Tests for SM2 digital signature implementation
 
 import pytest
 
-from dlms_cosem.security.sm2 import (
+from dlms_cosem.security import (
     sm2_generate_keypair,
     sm2_sign,
     sm2_verify,
-    sm2_private_key_from_bytes,
-    sm2_public_key_from_bytes,
-    sm2_signature_from_bytes,
     SM2PrivateKey,
     SM2PublicKey,
     SM2Signature,
@@ -119,7 +116,7 @@ class TestSM2Conversions:
         priv, _ = sm2_generate_keypair()
         bytes_data = priv.to_bytes()
 
-        priv2 = sm2_private_key_from_bytes(bytes_data)
+        priv2 = SM2PrivateKey(bytes_data)
         assert priv == priv2
 
     def test_public_key_from_bytes(self):
@@ -127,7 +124,7 @@ class TestSM2Conversions:
         _, pub = sm2_generate_keypair()
         bytes_data = pub.to_bytes()
 
-        pub2 = sm2_public_key_from_bytes(bytes_data)
+        pub2 = SM2PublicKey(bytes_data)
         assert pub == pub2
 
     def test_signature_from_bytes(self):
@@ -136,20 +133,20 @@ class TestSM2Conversions:
         signature = sm2_sign(priv, b"test")
         bytes_data = signature.to_bytes()
 
-        sig2 = sm2_signature_from_bytes(bytes_data)
+        sig2 = SM2Signature(bytes_data[:32], bytes_data[32:])
         assert signature == sig2
 
     def test_private_key_invalid_length(self):
         """Test private key with invalid length"""
-        with pytest.raises(SM2Error, match="Invalid private key length"):
-            sm2_private_key_from_bytes(b"short")
+        with pytest.raises(ValueError, match="Invalid private key length"):
+            SM2PrivateKey(b"short")
 
     def test_public_key_invalid_length(self):
         """Test public key with invalid length"""
-        with pytest.raises(SM2Error, match="Invalid public key length"):
-            sm2_public_key_from_bytes(b"short")
+        with pytest.raises(ValueError, match="Invalid public key length"):
+            SM2PublicKey(b"short")
 
     def test_signature_invalid_length(self):
         """Test signature with invalid length"""
-        with pytest.raises(SM2Error, match="Invalid signature length"):
-            sm2_signature_from_bytes(b"short")
+        with pytest.raises(ValueError, match="Invalid r component length"):
+            SM2Signature(b"short", b"short")
