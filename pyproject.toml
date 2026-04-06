@@ -46,6 +46,7 @@ dependencies = [
 [project.optional-dependencies]
 docs = ["mkdocs", "mkdocs-material"]
 test = ["pytest", "pytest-cov", "pytest-sugar", "pytest-asyncio", "hypothesis"]
+type-check = ["mypy>=1.9.0", "types-attrs"]
 
 # Key management optional dependencies
 keyring = ["keyring"]
