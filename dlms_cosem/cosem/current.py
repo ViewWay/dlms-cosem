@@ -7,7 +7,7 @@ OBIS codes (GB/T 17215):
   Average: 1.0.91.7.0.255
 """
 from dlms_cosem.cosem.obis import Obis
-from dlms_cosem.cosem.C2_Register import Register
+from dlms_cosem.cosem.register import Register
 
 OBIS_CURRENT_A = "1.0.31.7.0.255"
 OBIS_CURRENT_B = "1.0.51.7.0.255"

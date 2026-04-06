@@ -13,7 +13,7 @@ import attr
 
 from dlms_cosem import enumerations as enums
 from dlms_cosem.cosem.obis import Obis
-from dlms_cosem.cosem.C5_ProfileGeneric import AttributeDescription
+from dlms_cosem.cosem.profile_generic import AttributeDescription
 
 
 @attr.s(auto_attribs=True)

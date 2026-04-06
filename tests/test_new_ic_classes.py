@@ -3,22 +3,22 @@ import pytest
 
 from dlms_cosem import enumerations as enums
 from dlms_cosem.cosem.obis import Obis
-from dlms_cosem.cosem.C40_IPv4Setup import IPv4Setup
-from dlms_cosem.cosem.C27_GPRSSetup import GPRSSetup, GprsModemSetup
-from dlms_cosem.cosem.C15_PushSetup import PushSetup
-from dlms_cosem.cosem.C16_DisconnectControl import DisconnectControl, DisconnectState
-from dlms_cosem.cosem.C17_Limiter import Limiter
-from dlms_cosem.cosem.C26_MBusClient import MBusClient
-from dlms_cosem.cosem.C79_ParameterMonitor import ParameterMonitor
-from dlms_cosem.cosem.C57_SensorManager import SensorManager
-from dlms_cosem.cosem.C87_NTPSetup import NTPSetup
-from dlms_cosem.cosem.C22_Account import Account
-from dlms_cosem.cosem.C66_Credit import Credit
-from dlms_cosem.cosem.C67_Charge import Charge
-from dlms_cosem.cosem.C82_Arbitrator import Arbitrator
-from dlms_cosem.cosem.C117_MACAddressSetup import MACAddressSetup
-from dlms_cosem.cosem.C45_PPPSetup import PPPSetup, PPPAuthProtocol
-from dlms_cosem.cosem.C28_SMTPSetup import SMTPSetup
+from dlms_cosem.cosem.ipv4_setup import IPv4Setup
+from dlms_cosem.cosem.gprs_modem_setup import GPRSSetup, GprsModemSetup
+from dlms_cosem.cosem.push_setup import PushSetup
+from dlms_cosem.cosem.disconnect_control import DisconnectControl, DisconnectState
+from dlms_cosem.cosem.limiter import Limiter
+from dlms_cosem.cosem.mbus_client import MBusClient
+from dlms_cosem.cosem.parameter_monitor import ParameterMonitor
+from dlms_cosem.cosem.sensor_manager import SensorManager
+from dlms_cosem.cosem.ntp_setup import NTPSetup
+from dlms_cosem.cosem.account import Account
+from dlms_cosem.cosem.credit import Credit
+from dlms_cosem.cosem.charge import Charge
+from dlms_cosem.cosem.arbitrator import Arbitrator
+from dlms_cosem.cosem.mac_address_setup import MACAddressSetup
+from dlms_cosem.cosem.ppp_setup import PPPSetup, PPPAuthProtocol
+from dlms_cosem.cosem.smtp_setup import SMTPSetup
 
 
 OBIS = Obis.from_string("0.0.1.0.0.255")
