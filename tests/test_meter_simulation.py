@@ -21,7 +21,7 @@ class TestMeterSimulation:
         assert assoc.server_system_title == b"\x01\x02\x03\x04\x05\x06\x07\x08"
 
     def test_energy_registers_exist(self):
-        reg = self.meter.get_object(3, (1, 0, 0, 0, 0, 255))
+        reg = self.meter.get_object(2, (1, 0, 0, 0, 0, 255))
         assert reg is not None
 
     def test_simulate_reading(self):

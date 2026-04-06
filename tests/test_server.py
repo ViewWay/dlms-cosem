@@ -46,7 +46,7 @@ class TestCosemObjectModel:
         model = CosemObjectModel()
         obis = Obis(1, 0, 1, 8, 0, 255)
         model.add_object(obis, Register(obis))
-        result = model.get_objects_by_class(3)
+        result = model.get_objects_by_class(2)
         assert len(result) == 1
 
 
