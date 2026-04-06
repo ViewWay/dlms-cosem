@@ -50,7 +50,8 @@ CLOSED = make_sentinel("CLOSED")
 
 NEED_DATA = make_sentinel("NEED_DATA")
 
-# TODO: segmentation handling is not working with this state layout.
+SEGMENTING = make_sentinel("SEGMENTING")
+AWAITING_SEGMENT = make_sentinel("AWAITING_SEGMENT")
 
 HDLC_STATE_TRANSITIONS = {
     NOT_CONNECTED: {frames.SetNormalResponseModeFrame: AWAITING_CONNECTION},
@@ -62,6 +63,8 @@ HDLC_STATE_TRANSITIONS = {
     },
     AWAITING_RESPONSE: {frames.InformationFrame: IDLE, frames.ReceiveReadyFrame: IDLE},
     AWAITING_DISCONNECT: {frames.UnNumberedAcknowledgmentFrame: NOT_CONNECTED},
+    SEGMENTING: {frames.ReceiveReadyFrame: SEGMENTING, frames.InformationFrame: IDLE},
+    AWAITING_SEGMENT: {frames.InformationFrame: AWAITING_SEGMENT, frames.ReceiveReadyFrame: AWAITING_SEGMENT},
 }
 
 

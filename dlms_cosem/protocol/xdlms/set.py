@@ -1,4 +1,5 @@
 from typing import *
+from enum import IntEnum
 
 import attr
 
@@ -6,6 +7,190 @@ from dlms_cosem import cosem, dlms_data
 from dlms_cosem import enumerations as enums
 from dlms_cosem.protocol.xdlms.base import AbstractXDlmsApdu
 from dlms_cosem.protocol.xdlms.invoke_id_and_priority import InvokeIdAndPriority
+
+"""
+Selective-Access-Descriptor ::= CHOICE
+{
+    range-descriptor            [0] IMPLICIT RangeDescriptor,
+    entry-descriptor            [1] IMPLICIT EntryDescriptor,
+    selected-values             [2] IMPLICIT SelectedValues
+}
+
+RangeDescriptor ::= SEQUENCE
+{
+    restricting-identifier      OctetString,  -- 1 byte: entry, 2: from_entry, 3: to_entry, 4: from/to
+    selected-object-attribute   Unsigned8 OPTIONAL
+}
+
+EntryDescriptor ::= Structure containing COSEM object identification
+
+SelectedValues ::= Structure containing list of selected values
+"""
+
+
+class AccessSelectionType(IntEnum):
+    RANGE_DESCRIPTOR = 0
+    ENTRY_DESCRIPTOR = 1
+    SELECTED_VALUES = 2
+
+
+@attr.s(auto_attribs=True)
+class RangeDescriptor:
+    """
+    Range Descriptor for selective access.
+
+    restricting-identifier is a 1-byte code:
+      0: not used
+      1: entry (single entry)
+      2: from-entry (range start)
+      3: to-entry (range end)
+      4: from-entry / to-entry (range with both)
+    """
+    restricting_identifier: int
+    selected_object_attribute: Optional[int] = attr.ib(default=None)
+    range_start: Optional[int] = attr.ib(default=None)
+    range_end: Optional[int] = attr.ib(default=None)
+
+    @classmethod
+    def from_bytes(cls, data: bytearray) -> "RangeDescriptor":
+        restricting_id = data.pop(0)
+        obj_attr = None
+        range_start = None
+        range_end = None
+
+        # remaining data depends on restricting_id:
+        # 1: 1 value (entry index)
+        # 2: 1 value (from_entry)
+        # 3: 1 value (to_entry)
+        # 4: 2 values (from_entry, to_entry)
+        # All values are encoded as variable integers
+        if restricting_id == 1:
+            range_start, _ = dlms_data.decode_variable_integer(bytes(data))
+        elif restricting_id == 2:
+            range_start, remaining = dlms_data.decode_variable_integer(bytes(data))
+        elif restricting_id == 3:
+            range_end, _ = dlms_data.decode_variable_integer(bytes(data))
+        elif restricting_id == 4:
+            range_start, remaining = dlms_data.decode_variable_integer(bytes(data))
+            range_end, _ = dlms_data.decode_variable_integer(remaining)
+
+        return cls(
+            restricting_identifier=restricting_id,
+            selected_object_attribute=obj_attr,
+            range_start=range_start,
+            range_end=range_end,
+        )
+
+    def to_bytes(self) -> bytes:
+        out = bytearray()
+        out.append(self.restricting_identifier)
+        if self.selected_object_attribute is not None:
+            out.append(self.selected_object_attribute)
+        if self.range_start is not None:
+            out.extend(dlms_data.encode_variable_integer(self.range_start))
+        if self.range_end is not None:
+            out.extend(dlms_data.encode_variable_integer(self.range_end))
+        return bytes(out)
+
+
+@attr.s(auto_attribs=True)
+class EntryDescriptor:
+    """
+    Entry Descriptor for selective access.
+    Encoded as a DLMS Structure.
+    """
+    entries: list = attr.ib(factory=list)
+
+    @classmethod
+    def from_bytes(cls, data: bytearray) -> "EntryDescriptor":
+        # Parse as DLMS structure: first byte is structure tag, then length
+        # The data should already start after the choice tag
+        entries = []
+        # Read the number of elements
+        count, remaining = dlms_data.decode_variable_integer(bytes(data))
+        data = bytearray(remaining)
+        for _ in range(count):
+            val_len, remaining = dlms_data.decode_variable_integer(bytes(data))
+            data = bytearray(remaining)
+            entry = bytes(data[:val_len])
+            data = data[val_len:]
+            entries.append(entry)
+        return cls(entries=entries)
+
+    def to_bytes(self) -> bytes:
+        out = bytearray()
+        out.extend(dlms_data.encode_variable_integer(len(self.entries)))
+        for entry in self.entries:
+            out.extend(dlms_data.encode_variable_integer(len(entry)))
+            out.extend(entry)
+        return bytes(out)
+
+
+@attr.s(auto_attribs=True)
+class SelectedValues:
+    """
+    Selected Values for selective access.
+    Encoded as a DLMS Array of indices.
+    """
+    values: list = attr.ib(factory=list)
+
+    @classmethod
+    def from_bytes(cls, data: bytearray) -> "SelectedValues":
+        values = []
+        count, remaining = dlms_data.decode_variable_integer(bytes(data))
+        data = bytearray(remaining)
+        for _ in range(count):
+            val_len, remaining = dlms_data.decode_variable_integer(bytes(data))
+            data = bytearray(remaining)
+            value = bytes(data[:val_len])
+            data = data[val_len:]
+            values.append(value)
+        return cls(values=values)
+
+    def to_bytes(self) -> bytes:
+        out = bytearray()
+        out.extend(dlms_data.encode_variable_integer(len(self.values)))
+        for value in self.values:
+            out.extend(dlms_data.encode_variable_integer(len(value)))
+            out.extend(value)
+        return bytes(out)
+
+
+def parse_access_selection(data: bytearray):
+    """
+    Parse a Selective-Access-Descriptor from bytes.
+
+    The first byte is the choice tag (0, 1, or 2).
+    Returns the appropriate descriptor object.
+    """
+    choice_tag = data.pop(0)
+    if choice_tag == AccessSelectionType.RANGE_DESCRIPTOR:
+        return RangeDescriptor.from_bytes(data)
+    elif choice_tag == AccessSelectionType.ENTRY_DESCRIPTOR:
+        return EntryDescriptor.from_bytes(data)
+    elif choice_tag == AccessSelectionType.SELECTED_VALUES:
+        return SelectedValues.from_bytes(data)
+    else:
+        raise ValueError(f"Unknown access selection type: {choice_tag}")
+
+
+def access_selection_to_bytes(access_selection) -> bytes:
+    """
+    Serialize an access selection descriptor to bytes.
+    """
+    out = bytearray()
+    if isinstance(access_selection, RangeDescriptor):
+        out.append(AccessSelectionType.RANGE_DESCRIPTOR)
+        out.extend(access_selection.to_bytes())
+    elif isinstance(access_selection, EntryDescriptor):
+        out.append(AccessSelectionType.ENTRY_DESCRIPTOR)
+        out.extend(access_selection.to_bytes())
+    elif isinstance(access_selection, SelectedValues):
+        out.append(AccessSelectionType.SELECTED_VALUES)
+        out.extend(access_selection.to_bytes())
+    else:
+        raise ValueError(f"Unknown access selection type: {type(access_selection)}")
+    return bytes(out)
 
 """
 Set-Request ::= CHOICE
@@ -73,7 +258,7 @@ class SetRequestNormal(AbstractXDlmsApdu):
 
         has_access_selection = bool(data.pop(0))
         if has_access_selection:
-            raise NotImplementedError("Selective access on SET is not implemented")
+            access_selection = parse_access_selection(data)
         else:
             access_selection = None
 
@@ -92,7 +277,7 @@ class SetRequestNormal(AbstractXDlmsApdu):
         out.extend(self.cosem_attribute.to_bytes())
         if self.access_selection:
             out.extend(b"\x01")
-            out.extend(self.access_selection.to_bytes())
+            out.extend(access_selection_to_bytes(self.access_selection))
         else:
             out.extend(b"\x00")
         out.extend(self.data)
@@ -160,8 +345,7 @@ class SetRequestWithFirstBlock(AbstractXDlmsApdu):
         has_access_selection = bool(data.pop(0))
         access_selection = None
         if has_access_selection:
-            # TODO: Implement access selection parsing
-            access_selection = data.pop(0)
+            access_selection = parse_access_selection(data)
 
         # DataBlock-SA
         last_block = bool(data.pop(0))
@@ -192,7 +376,7 @@ class SetRequestWithFirstBlock(AbstractXDlmsApdu):
         # Access selection
         if self.access_selection:
             out.extend(b"\x01")
-            # out.extend(self.access_selection.to_bytes())  # TODO: Implement
+            out.extend(access_selection_to_bytes(self.access_selection))
         else:
             out.extend(b"\x00")
 
@@ -347,8 +531,7 @@ class SetRequestWithList(AbstractXDlmsApdu):
             # Skip access selection for now
             has_access = bool(data.pop(0))
             if has_access:
-                # TODO: Parse access selection
-                _ = data.pop(0)
+                parse_access_selection(data)
             attribute_descriptor_list.append(cosem_attribute)
 
         # Number of values

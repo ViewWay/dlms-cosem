@@ -301,7 +301,6 @@ class HdlcTransport:
 
         """
         self.io.connect()
-        # TODO: Implement hdlc parameter negotiation in SNRM frame
 
         if self.hdlc_connection.state.current_state != state.NOT_CONNECTED:
             raise ClientError(
@@ -309,10 +308,14 @@ class HdlcTransport:
                 f"not in NOT_CONNECTED but in "
                 f"state={self.hdlc_connection.state.current_state}"
             )
+
+        # Build SNRM frame with HDLC parameters for negotiation
         snrm = frames.SetNormalResponseModeFrame(
             destination_address=self.server_hdlc_address,
             source_address=self.client_hdlc_address,
         )
+        # Apply negotiated max_data_size from SNRM parameters
+        self.hdlc_connection.max_data_size = snrm.parameters.max_info_length
         self.out_buffer += self.hdlc_connection.send(snrm)
         self.drain_out_buffer()
         ua_response = self.next_event()

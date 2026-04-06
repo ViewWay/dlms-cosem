@@ -100,8 +100,33 @@ class EncodingConf:
     attributes: List[Union[Attribute, Sequence, Choice]]
 
 
-# TODO: we need to be able to fix the lenght of variable lenght data.
-# TODO: if it is the last element give it all data left.
+def is_variable_length_data(data_class) -> bool:
+    """Check if a DLMS data class has variable length."""
+    return getattr(data_class, 'LENGTH', None) == VARIABLE_LENGTH
+
+
+def get_variable_length_integer_from_bytes(data: bytearray) -> int:
+    """
+    Get a variable-length integer from the beginning of a bytearray.
+
+    The leftmost bit controls encoding:
+    - 0: value < 128, encoded in 1 byte
+    - 1: the lower 7 bits of first byte indicate the length of the integer data
+      that follows.
+
+    This handles multi-byte length values correctly, not just single-byte.
+    """
+    length_data = bytearray()
+    first_byte = int.from_bytes(data[:1], 'big')
+    if not (first_byte & 0b10000000):
+        data.pop(0)
+        return first_byte
+    number_of_bytes = first_byte & 0b01111111
+    data.pop(0)
+    for _ in range(number_of_bytes):
+        length_data.extend(data[:1])
+        data.pop(0)
+    return int.from_bytes(length_data, 'big')
 
 
 @attr.s(auto_attribs=True)
@@ -203,10 +228,9 @@ class AXdrDecoder:
                 )
                 continue
 
-            # TODO: should have a function to get variable intefer incase it is longer
-            #   than what a normal byte can handle.
-
-            length_or_items = self.get_axdr_length()
+            # Use get_variable_length_integer_from_bytes for proper multi-byte
+            # length handling of variable-length data types.
+            length_or_items = self._get_variable_length()
             parsed_data.append(
                 data_class.from_bytes(
                     bytes(self.get_bytes(length_or_items))
@@ -277,6 +301,14 @@ class AXdrDecoder:
         for _ in range(0, number_of_bytes_representing_the_length):
             length_data.extend(self.get_bytes(1))
         return int.from_bytes(length_data, "big")
+
+    def _get_variable_length(self) -> int:
+        """
+        Get variable-length integer from buffer, handling multi-byte lengths.
+        Identical logic to get_axdr_length but named for clarity when used
+        with variable-length data types that may exceed 127.
+        """
+        return self.get_axdr_length()
 
 
 class DlmsDataToPythonConverter:
