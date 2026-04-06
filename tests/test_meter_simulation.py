@@ -122,7 +122,7 @@ class TestMeterSimulation:
         assert self.meter.zigbee_setup.status == 0
 
     def test_extended_register(self):
-        from dlms_cosem.cosem.extended_register import ExtendedRegister
+        from dlms_cosem.cosem.C4_ExtendedRegister import ExtendedRegister
         reg = ExtendedRegister(logical_name=Obis(a=0, b=0, c=96, d=1, e=0, f=255))
         reg.value = 12345
         from datetime import datetime
@@ -142,7 +142,7 @@ class TestMeterSimulation:
         assert reg.value == 0
 
     def test_profile_type_enums(self):
-        from dlms_cosem.cosem.profile_generic import ProfileType, SortMethod, BufferOverflow
+        from dlms_cosem.cosem.C7_ProfileGeneric import ProfileType, SortMethod, BufferOverflow
         assert ProfileType.LOAD_PROFILE == 0
         assert ProfileType.BILLING == 1
         assert SortMethod.FIFO == 1
@@ -172,4 +172,4 @@ class TestMeterSimulation:
 
 # Import needed for test
 from dlms_cosem.cosem.quality_control import QualityFlag
-from dlms_cosem.cosem.profile_generic import SortMethod
+from dlms_cosem.cosem.C7_ProfileGeneric import SortMethod

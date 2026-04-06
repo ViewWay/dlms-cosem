@@ -13,7 +13,7 @@ import attr
 
 from dlms_cosem import enumerations as enums
 from dlms_cosem.cosem.obis import Obis
-from dlms_cosem.cosem.register import Register
+from dlms_cosem.cosem.C3_Register import Register
 
 OBIS_ACTIVE_POWER = "1.0.11.7.0.255"
 OBIS_REACTIVE_POWER = "1.0.13.7.0.255"

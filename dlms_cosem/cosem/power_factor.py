@@ -7,7 +7,7 @@ OBIS codes:
   Phase C: 1.0.73.7.0.255
 """
 from dlms_cosem.cosem.obis import Obis
-from dlms_cosem.cosem.register import Register
+from dlms_cosem.cosem.C3_Register import Register
 
 OBIS_PF_TOTAL = "1.0.13.7.0.255"
 OBIS_PF_A = "1.0.33.7.0.255"

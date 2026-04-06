@@ -3,34 +3,34 @@ from dlms_cosem.cosem.base import CosemAttribute, CosemMethod
 from dlms_cosem.cosem.obis import Obis
 
 # Blue Book COSEM Interface Classes
-from dlms_cosem.cosem.data import Data
-from dlms_cosem.cosem.register import Register
-from dlms_cosem.cosem.extended_register import ExtendedRegister
+from dlms_cosem.cosem.C1_Data import Data
+from dlms_cosem.cosem.C3_Register import Register
+from dlms_cosem.cosem.C4_ExtendedRegister import ExtendedRegister
 from dlms_cosem.cosem.max_demand_register import MaxDemandRegister
 from dlms_cosem.cosem.value_with_register import ValueWithRegister
-from dlms_cosem.cosem.register_monitor import RegisterMonitor
-from dlms_cosem.cosem.register_activation import RegisterActivation
-from dlms_cosem.cosem.demand_register import DemandRegister
-from dlms_cosem.cosem.register_table import RegisterTable
-from dlms_cosem.cosem.single_action_schedule import SingleActionSchedule
-from dlms_cosem.cosem.action_schedule import ActionSchedule
-from dlms_cosem.cosem.script_table import ScriptTable
-from dlms_cosem.cosem.profile_generic import (
+from dlms_cosem.cosem.C21_RegisterMonitor import RegisterMonitor
+from dlms_cosem.cosem.C6_RegisterActivation import RegisterActivation
+from dlms_cosem.cosem.C5_DemandRegister import DemandRegister
+from dlms_cosem.cosem.C61_RegisterTable import RegisterTable
+from dlms_cosem.cosem.C22_SingleActionSchedule import SingleActionSchedule
+from dlms_cosem.cosem.C10_Schedule import ActionSchedule
+from dlms_cosem.cosem.C9_ScriptTable import ScriptTable
+from dlms_cosem.cosem.C7_ProfileGeneric import (
     ProfileGeneric, SortMethod, ProfileType, BufferOverflow,
 )
-from dlms_cosem.cosem.clock import Clock
-from dlms_cosem.cosem.special_day_table import SpecialDayTable
+from dlms_cosem.cosem.C8_Clock import Clock
+from dlms_cosem.cosem.C11_SpecialDaysTable import SpecialDayTable
 from dlms_cosem.cosem.tariff_plan import TariffPlan
 from dlms_cosem.cosem.tariff_table import TariffTable
 from dlms_cosem.cosem.season_profile import SeasonProfile
 from dlms_cosem.cosem.week_profile import WeekProfile
 from dlms_cosem.cosem.day_profile import DayProfile
-from dlms_cosem.cosem.lp_setup import LocalPortSetup
-from dlms_cosem.cosem.rs485_setup import RS485Setup
-from dlms_cosem.cosem.infrared_setup import InfraredSetup
+from dlms_cosem.cosem.C19_IECLocalPortSetup import LocalPortSetup
+from dlms_cosem.cosem.C23_IECHDLCSetup import RS485Setup
+from dlms_cosem.cosem.C24_IECTwistedPairSetup import InfraredSetup
 from dlms_cosem.cosem.modem_setup import ModemSetup
-from dlms_cosem.cosem.auto_answer import AutoAnswer
-from dlms_cosem.cosem.modem_configuration import ModemConfiguration
+from dlms_cosem.cosem.C28_AutoAnswer import AutoAnswer
+from dlms_cosem.cosem.C27_ModemConfiguration import ModemConfiguration
 from dlms_cosem.cosem.nbp_setup import NBIoTProfileSetup
 from dlms_cosem.cosem.lora_setup import LoRaWANSetup
 from dlms_cosem.cosem.event_log import EventLog
@@ -40,10 +40,10 @@ from dlms_cosem.cosem.event_notification import EventNotification
 from dlms_cosem.cosem.quality_control import QualityControl, QualityFlag
 from dlms_cosem.cosem.interrogation_interface import InterrogationInterface
 from dlms_cosem.cosem.load_profile_switch import LoadProfileSwitch
-from dlms_cosem.cosem.security_setup import SecuritySetup
-from dlms_cosem.cosem.association_sn import AssociationSN
+from dlms_cosem.cosem.C64_SecuritySetup import SecuritySetup
+from dlms_cosem.cosem.C12_AssociationSN import AssociationSN
 from dlms_cosem.cosem.gprs_setup import GPRSSetup
-from dlms_cosem.cosem.tcp_udp_setup import TcpUdpSetup
+from dlms_cosem.cosem.C41_TCPUDPSetup import TcpUdpSetup
 from dlms_cosem.cosem.zigbee_setup import ZigBeeSetup
 from dlms_cosem.cosem.energy_register import (
     create_energy_register, OBIS_ACTIVE_IMPORT, OBIS_ACTIVE_EXPORT,
@@ -56,18 +56,18 @@ from dlms_cosem.cosem.power_factor import create_pf_register
 from dlms_cosem.cosem.frequency import create_frequency_register
 from dlms_cosem.cosem.value_table import ValueTable, ValueEntry, ValueDescriptor
 from dlms_cosem.cosem.iec_public_key import IecPublicKey, KeyAlgorithm, KeyUsage
-from dlms_cosem.cosem.mbus_diagnostic import MbusDiagnostic
+from dlms_cosem.cosem.C77_MBusDiagnostic import MbusDiagnostic
 from dlms_cosem.cosem.power_quality_monitor import PowerQualityMonitor
 from dlms_cosem.cosem.harmonic_monitor import HarmonicMonitor, MonitoringMode
 from dlms_cosem.cosem.sag_swell_monitor import SagSwellMonitor
-from dlms_cosem.cosem.compact_data import CompactData, CompactDataField
-from dlms_cosem.cosem.status_mapping import StatusMapping, StatusMappingEntry
-from dlms_cosem.cosem.cosem_data_protection import CosemDataProtection, ProtectedObject
-from dlms_cosem.cosem.function_control import FunctionControl, FunctionControlEntry
-from dlms_cosem.cosem.array_manager import ArrayManager
-from dlms_cosem.cosem.comm_port_protection import CommPortProtection, ProtectedPort
-from dlms_cosem.cosem.activity_calendar import ActivityCalendar, ActivityPeriod
-from dlms_cosem.cosem.sap_assignment import SapAssignment, SapAssignmentEntry
+from dlms_cosem.cosem.C62_CompactData import CompactData, CompactDataField
+from dlms_cosem.cosem.C63_StatusMapping import StatusMapping, StatusMappingEntry
+from dlms_cosem.cosem.C30_COSEMDataProtection import CosemDataProtection, ProtectedObject
+from dlms_cosem.cosem.C122_FunctionControl import FunctionControl, FunctionControlEntry
+from dlms_cosem.cosem.C123_ArrayManager import ArrayManager
+from dlms_cosem.cosem.C124_CommPortProtection import CommPortProtection, ProtectedPort
+from dlms_cosem.cosem.C20_ActivityCalendar import ActivityCalendar, ActivityPeriod
+from dlms_cosem.cosem.C17_SAPAssignment import SapAssignment, SapAssignmentEntry
 
 __all__ = [
     "CosemAttribute", "CosemMethod", "Obis", "CosemAttributeWithSelection",

@@ -7,7 +7,7 @@ from dlms_cosem.server import (
     ActionRequestHandler,
 )
 from dlms_cosem.cosem.obis import Obis
-from dlms_cosem.cosem.register import Register
+from dlms_cosem.cosem.C3_Register import Register
 
 
 def _k(a, b, c, d, e, f):

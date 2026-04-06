@@ -21,7 +21,7 @@ import attr
 
 from dlms_cosem import enumerations as enums
 from dlms_cosem.cosem.obis import Obis
-from dlms_cosem.cosem.register import Register
+from dlms_cosem.cosem.C3_Register import Register
 
 
 # GB/T 17215 standard OBIS codes for energy registers
