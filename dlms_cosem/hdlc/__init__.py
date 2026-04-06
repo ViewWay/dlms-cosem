@@ -24,7 +24,10 @@ from dlms_cosem.hdlc.address import HdlcAddress
 # Parameter negotiation
 from dlms_cosem.hdlc.parameters import (
     DEFAULT_MAX_INFO_LENGTH,
-    DEFAULT_WINDOW_SIZE,
+    DEFAULT_WINDOW_SIZE_TX,
+    DEFAULT_WINDOW_SIZE_RX,
+    FORMAT_IDENTIFIER,
+    GROUP_IDENTIFIER,
     HdlcParameter,
     HdlcParameterList,
     HdlcParameterRange,
@@ -32,6 +35,9 @@ from dlms_cosem.hdlc.parameters import (
     PARAMETER_RANGES,
     negotiate_parameters,
 )
+
+# Backward compatibility aliases
+DEFAULT_WINDOW_SIZE = DEFAULT_WINDOW_SIZE_TX  # Deprecated: use DEFAULT_WINDOW_SIZE_TX
 
 # Window control for multi-frame transmission
 from dlms_cosem.hdlc.window import (
@@ -71,8 +77,12 @@ __all__ = [
     "HdlcParameterType",
     "HdlcParameterRange",
     "PARAMETER_RANGES",
-    "DEFAULT_WINDOW_SIZE",
+    "DEFAULT_WINDOW_SIZE_TX",
+    "DEFAULT_WINDOW_SIZE_RX",
+    "DEFAULT_WINDOW_SIZE",  # Deprecated alias
     "DEFAULT_MAX_INFO_LENGTH",
+    "FORMAT_IDENTIFIER",
+    "GROUP_IDENTIFIER",
     "negotiate_parameters",
     # Window control
     "SlidingWindow",

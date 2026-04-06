@@ -18,30 +18,42 @@ from dlms_cosem.hdlc import exceptions as hdlc_exceptions
 
 class HdlcParameterType(IntEnum):
     """
-    HDLC Parameter Types as defined in IEC 62056-46 and DLMS UA 1000-3.
+    HDLC Parameter Types as defined in DLMS Green Book Edition 9.
+    
+    These parameter IDs are used in SNRM/UA frame information fields
+    for HDLC parameter negotiation according to Green Book section 8.4.5.3.2.
 
     Each parameter type has a specific format and valid range.
     """
 
-    WINDOW_SIZE = 0x01
-    """Maximum number of I-frames that can be sent without acknowledgment (1-7)."""
-
-    MAX_INFORMATION_FIELD_LENGTH_TX = 0x02
+    MAX_INFORMATION_FIELD_LENGTH_TX = 0x05
     """Maximum information field length for transmission (128-2048)."""
 
-    MAX_INFORMATION_FIELD_LENGTH_RX = 0x03
+    MAX_INFORMATION_FIELD_LENGTH_RX = 0x06
     """Maximum information field length for reception (128-2048)."""
 
-    INTER_CHAR_TIMEOUT = 0x04
-    """Inter-character timeout in milliseconds (optional, rarely used)."""
+    WINDOW_SIZE_TX = 0x07
+    """Window size for transmission (1-7)."""
 
-    INACTIVITY_TIMEOUT = 0x05
-    """Inactivity timeout in milliseconds (optional, rarely used)."""
+    WINDOW_SIZE_RX = 0x08
+    """Window size for reception (1-7)."""
+
+    # Backward compatibility aliases (deprecated)
+    WINDOW_SIZE = 0x07  # Alias for WINDOW_SIZE_TX
+    MAX_INFORMATION_FIELD_LENGTH = 0x05  # Alias for MAX_INFORMATION_FIELD_LENGTH_TX
 
 
 # Default values for HDLC parameters (when not negotiated)
-DEFAULT_WINDOW_SIZE = 1
+DEFAULT_WINDOW_SIZE_TX = 1
+DEFAULT_WINDOW_SIZE_RX = 1
 DEFAULT_MAX_INFO_LENGTH = 128
+
+# Backward compatibility alias (deprecated)
+DEFAULT_WINDOW_SIZE = DEFAULT_WINDOW_SIZE_TX
+
+# Format and group identifiers for SNRM/UA information field
+FORMAT_IDENTIFIER = 0x81
+GROUP_IDENTIFIER = 0x80
 
 
 @attr.s(auto_attribs=True, frozen=True)
@@ -57,20 +69,24 @@ class HdlcParameterRange:
 
 # Parameter ranges based on DLMS/COSEM specification
 PARAMETER_RANGES: Dict[HdlcParameterType, HdlcParameterRange] = {
-    HdlcParameterType.WINDOW_SIZE: HdlcParameterRange(
-        min_value=1, max_value=7, default_value=DEFAULT_WINDOW_SIZE
-    ),
     HdlcParameterType.MAX_INFORMATION_FIELD_LENGTH_TX: HdlcParameterRange(
         min_value=128, max_value=2048, default_value=DEFAULT_MAX_INFO_LENGTH
     ),
     HdlcParameterType.MAX_INFORMATION_FIELD_LENGTH_RX: HdlcParameterRange(
         min_value=128, max_value=2048, default_value=DEFAULT_MAX_INFO_LENGTH
     ),
-    HdlcParameterType.INTER_CHAR_TIMEOUT: HdlcParameterRange(
-        min_value=0, max_value=255, default_value=50
+    HdlcParameterType.WINDOW_SIZE_TX: HdlcParameterRange(
+        min_value=1, max_value=7, default_value=DEFAULT_WINDOW_SIZE_TX
     ),
-    HdlcParameterType.INACTIVITY_TIMEOUT: HdlcParameterRange(
-        min_value=0, max_value=65535, default_value=60000
+    HdlcParameterType.WINDOW_SIZE_RX: HdlcParameterRange(
+        min_value=1, max_value=7, default_value=DEFAULT_WINDOW_SIZE_RX
+    ),
+    # Backward compatibility aliases
+    HdlcParameterType.WINDOW_SIZE: HdlcParameterRange(
+        min_value=1, max_value=7, default_value=DEFAULT_WINDOW_SIZE_TX
+    ),
+    HdlcParameterType.MAX_INFORMATION_FIELD_LENGTH: HdlcParameterRange(
+        min_value=128, max_value=2048, default_value=DEFAULT_MAX_INFO_LENGTH
     ),
 }
 
@@ -93,12 +109,17 @@ class HdlcParameter:
     value: int
 
     # Parameter type to value length mapping
+    # Note: Green Book allows 1 or 2 bytes for max info length (0x05/0x06)
+    # and 1 or 4 bytes for window size (0x07/0x08)
+    # We use minimal representation (1 byte for both)
     VALUE_LENGTHS: ClassVar[Dict[HdlcParameterType, int]] = {
+        HdlcParameterType.MAX_INFORMATION_FIELD_LENGTH_TX: 1,  # Can be 1 or 2
+        HdlcParameterType.MAX_INFORMATION_FIELD_LENGTH_RX: 1,  # Can be 1 or 2
+        HdlcParameterType.WINDOW_SIZE_TX: 1,
+        HdlcParameterType.WINDOW_SIZE_RX: 1,
+        # Backward compatibility aliases
         HdlcParameterType.WINDOW_SIZE: 1,
-        HdlcParameterType.MAX_INFORMATION_FIELD_LENGTH_TX: 2,
-        HdlcParameterType.MAX_INFORMATION_FIELD_LENGTH_RX: 2,
-        HdlcParameterType.INTER_CHAR_TIMEOUT: 1,
-        HdlcParameterType.INACTIVITY_TIMEOUT: 2,
+        HdlcParameterType.MAX_INFORMATION_FIELD_LENGTH: 1,
     }
 
     def validate(self) -> None:
@@ -121,6 +142,19 @@ class HdlcParameter:
     @property
     def length(self) -> int:
         """Return the length of the value field in bytes."""
+        # Use minimal bytes needed
+        if self.param_type in (
+            HdlcParameterType.MAX_INFORMATION_FIELD_LENGTH_TX,
+            HdlcParameterType.MAX_INFORMATION_FIELD_LENGTH_RX,
+        ):
+            # Use 1 byte for values <= 255, otherwise 2 bytes
+            return 1 if self.value <= 255 else 2
+        elif self.param_type in (
+            HdlcParameterType.WINDOW_SIZE_TX,
+            HdlcParameterType.WINDOW_SIZE_RX,
+        ):
+            # Window size is always 1 byte (1-7)
+            return 1
         return self.VALUE_LENGTHS.get(self.param_type, 1)
 
     def to_bytes(self) -> bytes:
@@ -136,16 +170,16 @@ class HdlcParameter:
         length_byte = self.length.to_bytes(1, "big")
 
         # Encode value based on parameter type
-        if self.param_type == HdlcParameterType.WINDOW_SIZE:
-            value_bytes = self.value.to_bytes(1, "big")
-        elif self.param_type in (
+        if self.param_type in (
             HdlcParameterType.MAX_INFORMATION_FIELD_LENGTH_TX,
             HdlcParameterType.MAX_INFORMATION_FIELD_LENGTH_RX,
-            HdlcParameterType.INACTIVITY_TIMEOUT,
         ):
-            value_bytes = self.value.to_bytes(2, "big")
-        elif self.param_type == HdlcParameterType.INTER_CHAR_TIMEOUT:
-            value_bytes = self.value.to_bytes(1, "big")
+            value_bytes = self.value.to_bytes(self.length, "big")
+        elif self.param_type in (
+            HdlcParameterType.WINDOW_SIZE_TX,
+            HdlcParameterType.WINDOW_SIZE_RX,
+        ):
+            value_bytes = self.value.to_bytes(self.length, "big")
         else:
             # Fallback: try to encode with minimal bytes
             value_bytes = self.value.to_bytes(self.length, "big")
@@ -263,9 +297,13 @@ class HdlcParameterList:
         param.validate()
         self._parameters[param_type] = param
 
-    def set_window_size(self, window_size: int) -> None:
-        """Set the window size (1-7)."""
-        self.set(HdlcParameterType.WINDOW_SIZE, window_size)
+    def set_window_size_tx(self, window_size: int) -> None:
+        """Set the window size for transmission (1-7)."""
+        self.set(HdlcParameterType.WINDOW_SIZE_TX, window_size)
+
+    def set_window_size_rx(self, window_size: int) -> None:
+        """Set the window size for reception (1-7)."""
+        self.set(HdlcParameterType.WINDOW_SIZE_RX, window_size)
 
     def set_max_info_length_tx(self, length: int) -> None:
         """Set the maximum information field length for transmission."""
@@ -291,9 +329,24 @@ class HdlcParameterList:
         return default
 
     @property
+    def window_size_tx(self) -> int:
+        """Get the window size for transmission, or default if not set."""
+        return self.get(HdlcParameterType.WINDOW_SIZE_TX, DEFAULT_WINDOW_SIZE_TX)
+
+    @property
+    def window_size_rx(self) -> int:
+        """Get the window size for reception, or default if not set."""
+        return self.get(HdlcParameterType.WINDOW_SIZE_RX, DEFAULT_WINDOW_SIZE_RX)
+
+    @property
     def window_size(self) -> int:
-        """Get the window size, or default if not set."""
-        return self.get(HdlcParameterType.WINDOW_SIZE, DEFAULT_WINDOW_SIZE)
+        """
+        Get the window size (backward compatibility).
+        
+        Returns window_size_tx for backward compatibility.
+        Deprecated: Use window_size_tx or window_size_rx.
+        """
+        return self.window_size_tx
 
     @property
     def max_info_length_tx(self) -> int:
@@ -328,30 +381,56 @@ class HdlcParameterList:
             return rx
         return DEFAULT_MAX_INFO_LENGTH
 
-    def to_bytes(self) -> bytes:
+    def to_bytes(self, include_header: bool = True) -> bytes:
         """
-        Encode all parameters to bytes.
+        Encode all parameters to bytes with Green Book format.
+        
+        Green Book section 8.4.5.3.2 specifies:
+        - Format identifier: 0x81
+        - Group identifier: 0x80
+        - Group length (1 byte): total length of all parameters
+        - Parameters in TLV format
+
+        Args:
+            include_header: Whether to include 0x81/0x80/length header
 
         Returns:
-            Concatenated TLV encoded parameters
+            Encoded parameters
         """
         if not self._parameters:
             return b""
 
         # Encode parameters in order of type (for consistency)
-        result = b""
+        params_bytes = b""
         for param_type in sorted(self._parameters.keys()):
-            result += self._parameters[param_type].to_bytes()
+            params_bytes += self._parameters[param_type].to_bytes()
 
-        return result
+        if not include_header:
+            return params_bytes
+
+        # Add Green Book header: 0x81, 0x80, group_length
+        header = bytes([
+            FORMAT_IDENTIFIER,
+            GROUP_IDENTIFIER,
+            len(params_bytes)
+        ])
+        
+        return header + params_bytes
 
     @classmethod
-    def from_bytes(cls, data: bytes) -> "HdlcParameterList":
+    def from_bytes(cls, data: bytes, has_header: bool = True) -> "HdlcParameterList":
         """
         Decode parameters from bytes.
+        
+        Green Book format includes header:
+        - 0x81 format identifier
+        - 0x80 group identifier
+        - group length (1 byte)
+        - parameters in TLV format
 
         Args:
             data: Byte array containing TLV encoded parameters
+            has_header: Whether data includes 0x81/0x80/length header
 
         Returns:
             HdlcParameterList instance
@@ -361,6 +440,18 @@ class HdlcParameterList:
         """
         params = cls()
         offset = 0
+
+        # Skip Green Book header if present
+        if has_header and len(data) >= 3:
+            if data[0] == FORMAT_IDENTIFIER and data[1] == GROUP_IDENTIFIER:
+                group_length = data[2]
+                offset = 3
+                # Verify length matches
+                if len(data) < 3 + group_length:
+                    raise hdlc_exceptions.HdlcParsingError(
+                        f"Data too short for group length {group_length}, "
+                        f"got {len(data) - 3} bytes"
+                    )
 
         while offset < len(data):
             param = HdlcParameter.from_bytes(data, offset)
@@ -418,6 +509,10 @@ def negotiate_parameters(
     maximum capabilities. The final negotiated value for each parameter
     is the minimum of the two proposals, ensuring both sides can handle
     the communication.
+    
+    Note: Client's TX parameters correspond to server's RX and vice versa.
+    For example, client's MAX_INFO_FIELD_LENGTH_TX matches against
+    server's MAX_INFO_FIELD_LENGTH_RX.
 
     Negotiation Rules:
         - If client doesn't set a parameter, default value is used
@@ -434,42 +529,37 @@ def negotiate_parameters(
     Examples:
         Basic negotiation:
         >>> client = HdlcParameterList()
-        >>> client.set_window_size(5)
+        >>> client.set_window_size_tx(5)
         >>> client.set_max_info_length_tx(1024)
         >>> server = HdlcParameterList()
-        >>> server.set_window_size(3)
-        >>> server.set_max_info_length_tx(512)
+        >>> server.set_window_size_rx(3)
+        >>> server.set_max_info_length_rx(512)
         >>> negotiated = negotiate_parameters(client, server)
-        >>> negotiated.window_size
+        >>> negotiated.window_size_tx
         3
         >>> negotiated.max_info_length_tx
         512
-
-        Client proposes, server uses defaults:
-        >>> client = HdlcParameterList()
-        >>> client.set_window_size(5)
-        >>> server = HdlcParameterList()
-        >>> server.set_window_size(3)
-        >>> negotiated = negotiate_parameters(client, server)
-        >>> negotiated.window_size  # 3
-        3
     """
     negotiated = HdlcParameterList()
 
-    # Get all parameter types from both lists
-    all_types = set(client_params._parameters.keys()) | set(
-        server_params._parameters.keys()
-    )
+    # Map client TX parameters to server RX parameters and vice versa
+    param_pairs = [
+        (HdlcParameterType.MAX_INFORMATION_FIELD_LENGTH_TX, 
+         HdlcParameterType.MAX_INFORMATION_FIELD_LENGTH_RX),
+        (HdlcParameterType.WINDOW_SIZE_TX, 
+         HdlcParameterType.WINDOW_SIZE_RX),
+    ]
 
-    for param_type in all_types:
+    for client_type, server_type in param_pairs:
         # Get default range
-        if param_type not in PARAMETER_RANGES:
+        if client_type not in PARAMETER_RANGES:
             continue
 
-        range_info = PARAMETER_RANGES[param_type]
+        range_info = PARAMETER_RANGES[client_type]
 
-        client_value = client_params.get(param_type, range_info.default_value)
-        server_value = server_params.get(param_type, range_info.default_value)
+        client_value = client_params.get(client_type, range_info.default_value)
+        # Match client TX with server RX
+        server_value = server_params.get(server_type, range_info.default_value)
 
         # Negotiate: use minimum (both represent maximum capabilities)
         negotiated_value = min(client_value, server_value)
@@ -479,6 +569,24 @@ def negotiate_parameters(
             range_info.min_value, min(negotiated_value, range_info.max_value)
         )
 
-        negotiated._parameters[param_type] = HdlcParameter(param_type, negotiated_value)
+        negotiated._parameters[client_type] = HdlcParameter(client_type, negotiated_value)
+
+    # Also negotiate the reverse direction (client RX with server TX)
+    for server_type, client_type in param_pairs:
+        if server_type not in PARAMETER_RANGES:
+            continue
+
+        range_info = PARAMETER_RANGES[server_type]
+
+        server_value = server_params.get(server_type, range_info.default_value)
+        client_value = client_params.get(client_type, range_info.default_value)
+
+        negotiated_value = min(client_value, server_value)
+        negotiated_value = max(
+            range_info.min_value, min(negotiated_value, range_info.max_value)
+        )
+
+        if server_type not in negotiated._parameters:
+            negotiated._parameters[server_type] = HdlcParameter(server_type, negotiated_value)
 
     return negotiated
