@@ -184,11 +184,31 @@ class BlockingTcpIO:
                 raise exceptions.CommunicationError("Could not receive data") from e
         return data
 
-    def recv_until(self, end: bytes) -> bytes:
-        data = b""
-        while not data.endswith(end):
-            data += self.recv()
-        return data
+    def recv_until(self, end: bytes, max_size: int = 4096) -> bytes:
+        """Read until end marker is found using buffered reads."""
+        buffer = bytearray()
+        # Check leftover data from previous recv
+        if hasattr(self, '_recv_buffer') and self._recv_buffer:
+            buffer.extend(self._recv_buffer)
+            idx = buffer.find(end)
+            if idx >= 0:
+                extra = buffer[idx + len(end):]
+                self._recv_buffer = bytearray(extra)
+                return bytes(buffer[:idx + len(end)])
+        while len(buffer) < max_size:
+            try:
+                chunk = self.tcp_socket.recv(min(1024, max_size - len(buffer)))
+                if not chunk:
+                    break
+                buffer.extend(chunk)
+                idx = buffer.find(end)
+                if idx >= 0:
+                    extra = buffer[idx + len(end):]
+                    self._recv_buffer = bytearray(extra)
+                    return bytes(buffer[:idx + len(end)])
+            except socket.timeout:
+                continue
+        return bytes(buffer)
 
 
 @attr.s(auto_attribs=True)
@@ -343,7 +363,8 @@ class HdlcTransport:
         :return:
         """
 
-        timeout_at = time.monotonic() + self.timeout
+        timeout = self.hdlc_connection.timeout_config.to_wait_resp_ms / 1000.0
+        timeout_at = time.monotonic() + timeout
 
         while True:
             # If we already have a complete event buffered internally, just

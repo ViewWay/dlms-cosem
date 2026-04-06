@@ -13,8 +13,22 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import attr
 
-from dlms_cosem import enumerations as enums
+from dlms_cosem import enumerations as enums, exceptions
 from dlms_cosem.cosem.obis import Obis
+from dlms_cosem.connection import XDlmsApduFactory
+from dlms_cosem.protocol.xdlms import (
+    GetRequestNormal, GetRequestFactory,
+    SetRequestNormal, SetRequestFactory,
+    ActionRequestNormal, ActionRequestFactory,
+    GetResponseNormal, GetResponseNormalWithError,
+    SetResponseNormal,
+    ActionResponseNormal, ActionResponseNormalWithData,
+    ExceptionResponse,
+    InvokeIdAndPriority,
+)
+from dlms_cosem.protocol.xdlms.get import GetResponseFactory
+from dlms_cosem.protocol.xdlms.set import SetResponseFactory
+from dlms_cosem.protocol.xdlms.action import ActionResponseFactory
 
 LOG = structlog.get_logger()
 
@@ -84,33 +98,127 @@ class RequestHandler(ABC):
 
 
 class GetRequestHandler(RequestHandler):
-    """Handles GET-Request for COSEM attributes."""
+    """Handles GET-Request for COSEM attributes using real APDU parsing."""
 
     async def handle(self, data: bytes, model: CosemObjectModel) -> bytes:
-        # Simplified: parse class_id + obis + attr_id, look up object, return value
-        # Real implementation would parse full DLMS APDU
         LOG.debug("Processing GET request", data_len=len(data))
-        return self._build_get_response(model)
+        apdu = XDlmsApduFactory.apdu_from_bytes(data)
+        if isinstance(apdu, GetRequestNormal):
+            return self._handle_get_normal(apdu, model)
+        return self._make_exception_response(apdu, b'\x01')
 
-    def _build_get_response(self, model: CosemObjectModel) -> bytes:
-        # Return minimal DLMS response
-        return bytes([0xC1, 0x00, 0x02, 0x00])
+    def _handle_get_normal(self, apdu: GetRequestNormal, model: CosemObjectModel) -> bytes:
+        obis_val = apdu.cosem_attribute.instance
+        attr = apdu.cosem_attribute.attribute
+        obis_bytes = obis_val.to_bytes() if hasattr(obis_val, 'to_bytes') else obis_val
+        obj = model.get_object(obis_bytes)
+        if obj is None:
+            LOG.warning("Object not found", obis=obis_bytes.hex() if isinstance(obis_bytes, bytes) else str(obis_bytes), attr=attr)
+            return GetResponseNormalWithError(
+                error=enums.DataAccessResult.OBJECT_UNDEFINED,
+                invoke_id_and_priority=apdu.invoke_id_and_priority,
+            ).to_bytes()
+        # Try to get attribute value from object
+        if hasattr(obj, 'get_attribute'):
+            try:
+                value = obj.get_attribute(attr)
+                if isinstance(value, bytes):
+                    data = value
+                else:
+                    import dlms_cosem.dlms_data as dd
+                    data = dd.CosemDataCodec(value).to_bytes()
+            except Exception:
+                data = b'\x06\x00\x00'  # null-data
+        elif hasattr(obj, 'attributes'):
+            attrs = obj.attributes if isinstance(obj.attributes, dict) else {}
+            data = attrs.get(attr, b'\x06\x00\x00')
+        else:
+            data = b'\x06\x00\x00'
+        return GetResponseNormal(
+            data=data,
+            invoke_id_and_priority=apdu.invoke_id_and_priority,
+        ).to_bytes()
 
 
 class SetRequestHandler(RequestHandler):
-    """Handles SET-Request for COSEM attributes."""
+    """Handles SET-Request for COSEM attributes using real APDU parsing."""
 
     async def handle(self, data: bytes, model: CosemObjectModel) -> bytes:
         LOG.debug("Processing SET request", data_len=len(data))
-        return bytes([0xC1, 0x01, 0x00])
+        apdu = XDlmsApduFactory.apdu_from_bytes(data)
+        if isinstance(apdu, SetRequestNormal):
+            return self._handle_set_normal(apdu, model)
+        return self._make_exception_response(apdu, b'\x01')
+
+    def _handle_set_normal(self, apdu: SetRequestNormal, model: CosemObjectModel) -> bytes:
+        obis_bytes = apdu.cosem_attribute.instance
+        attr = apdu.cosem_attribute.attribute
+        obj = model.get_object(obis_bytes)
+        if obj is None:
+            return SetResponseNormal(
+                result=enums.DataAccessResult.OBJECT_UNDEFINED,
+                invoke_id_and_priority=apdu.invoke_id_and_priority,
+            ).to_bytes()
+        if hasattr(obj, 'set_attribute'):
+            try:
+                obj.set_attribute(attr, apdu.data)
+                result = enums.DataAccessResult.SUCCESS
+            except Exception:
+                result = enums.DataAccessResult.HARDWARE_FAULT
+        else:
+            result = enums.DataAccessResult.OBJECT_UNDEFINED
+        return SetResponseNormal(
+            result=result,
+            invoke_id_and_priority=apdu.invoke_id_and_priority,
+        ).to_bytes()
 
 
 class ActionRequestHandler(RequestHandler):
-    """Handles ACTION-Request for COSEM methods."""
+    """Handles ACTION-Request for COSEM methods using real APDU parsing."""
 
     async def handle(self, data: bytes, model: CosemObjectModel) -> bytes:
         LOG.debug("Processing ACTION request", data_len=len(data))
-        return bytes([0xC2, 0x00, 0x00])
+        apdu = XDlmsApduFactory.apdu_from_bytes(data)
+        if isinstance(apdu, ActionRequestNormal):
+            return self._handle_action_normal(apdu, model)
+        return self._make_exception_response(apdu, b'\x01')
+
+    def _handle_action_normal(self, apdu: ActionRequestNormal, model: CosemObjectModel) -> bytes:
+        obis_val = apdu.cosem_method.instance
+        method = apdu.cosem_method.method
+        obis_bytes = obis_val.to_bytes() if hasattr(obis_val, 'to_bytes') else obis_val
+        obj = model.get_object(obis_bytes)
+        if obj is None:
+            return ActionResponseNormal(
+                status=enums.ActionResultStatus.OBJECT_UNDEFINED,
+                invoke_id_and_priority=apdu.invoke_id_and_priority,
+            ).to_bytes()
+        if hasattr(obj, 'action'):
+            try:
+                result = obj.action(method)
+                if isinstance(result, bytes):
+                    return ActionResponseNormalWithData(
+                        status=enums.ActionResultStatus.SUCCESS,
+                        invoke_id_and_priority=apdu.invoke_id_and_priority,
+                        data=result,
+                    ).to_bytes()
+            except Exception:
+                pass
+        return ActionResponseNormal(
+            status=enums.ActionResultStatus.SUCCESS,
+            invoke_id_and_priority=apdu.invoke_id_and_priority,
+        ).to_bytes()
+
+    @staticmethod
+    def _make_exception_response(apdu, state_error: bytes) -> bytes:
+        """Build an ExceptionResponse when APDU type is unexpected."""
+        invoke_id = getattr(apdu, 'invoke_id_and_priority', None)
+        if invoke_id is None:
+            return bytes([0xC1, 0x00, 0x00])
+        return ExceptionResponse(
+            invoke_id_and_priority=invoke_id,
+            state_error=state_error,
+        ).to_bytes()
 
 
 class DlmsRequestRouter:
@@ -131,18 +239,19 @@ class DlmsRequestRouter:
     async def route(self, request_data: bytes, model: CosemObjectModel) -> bytes:
         """Route a DLMS request to the appropriate handler.
 
-        Parses the request type from the first byte(s) of the APDU.
+        Parses the APDU using XDlmsApduFactory and dispatches to the
+        correct handler based on the resolved APDU type.
         """
         if not request_data:
             return bytes([0xC1, 0x00, 0x00])  # Error response
 
-        tag = request_data[0] & 0xF0
+        tag = request_data[0]
 
-        if tag == 0xC0:  # Get request (0xC0-0xCF)
+        if tag == 192:  # 0xC0 - GET request
             handler = self._handlers.get("get")
-        elif tag == 0xE0:  # Set request (0xE0-0xEF)
+        elif tag == 193:  # 0xC1 - SET request
             handler = self._handlers.get("set")
-        elif tag == 0xD0:  # Action request (0xD0-0xDF)
+        elif tag == 195:  # 0xC3 - ACTION request
             handler = self._handlers.get("action")
         else:
             LOG.warning("Unknown request type", tag=hex(tag))

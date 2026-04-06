@@ -45,7 +45,7 @@ class TestCertificate:
 
     def test_certificate_sign(self):
         """Test signing a certificate"""
-        ca_priv, _ = sm2_generate_keypair()
+        ca_priv, ca_pub = sm2_generate_keypair()
         _, end_pub = sm2_generate_keypair()
 
         validity = Validity(
@@ -64,7 +64,7 @@ class TestCertificate:
             validity=validity,
         )
 
-        cert.sign(ca_priv, b"CA Issuer")
+        cert.sign(ca_priv, ca_pub, b"CA Issuer")
 
         assert cert.issuer == b"CA Issuer"
         assert len(cert.signature.signature) == 64
@@ -222,7 +222,7 @@ class TestCertificateStore:
             public_key=ca_pub_info,
             validity=ca_validity,
         )
-        ca_cert.sign(ca_priv, b"Root CA")
+        ca_cert.sign(ca_priv, ca_pub, b"Root CA")
         store.add(ca_cert)
 
         # Create intermediate certificate
@@ -244,7 +244,7 @@ class TestCertificateStore:
             public_key=int_pub_info,
             validity=int_validity,
         )
-        int_cert.sign(ca_priv, b"Root CA")
+        int_cert.sign(ca_priv, ca_pub, b"Root CA")
 
         # Create end-entity certificate
         seed3 = bytes([i + 65 for i in range(32)])
@@ -265,7 +265,7 @@ class TestCertificateStore:
             public_key=end_pub_info,
             validity=end_validity,
         )
-        end_cert.sign(int_priv, b"Intermediate CA")
+        end_cert.sign(int_priv, int_pub, b"Intermediate CA")
 
         # Check chain structure
         chain = [end_cert, int_cert, ca_cert]

@@ -12,6 +12,7 @@ import attr
 from dlms_cosem import enumerations as enums
 from dlms_cosem.cosem.obis import Obis
 from dlms_cosem.cosem.C7_ProfileGeneric import AttributeDescription
+import struct
 
 
 @attr.s(auto_attribs=True)

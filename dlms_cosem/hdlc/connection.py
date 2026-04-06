@@ -2,7 +2,8 @@ import attr
 import structlog
 
 from dlms_cosem.hdlc import address, exceptions, frames
-from dlms_cosem.hdlc.exceptions import LocalProtocolError
+from dlms_cosem.hdlc.exceptions import LocalProtocolError, HdlcTimeoutError
+from dlms_cosem.hdlc.parameters import HdlcTimeoutConfig
 from dlms_cosem.hdlc.state import (
     AWAITING_CONNECTION,
     AWAITING_DISCONNECT,
@@ -37,6 +38,7 @@ class HdlcConnection:
     state: HdlcConnectionState = attr.ib(factory=HdlcConnectionState)
     buffer: bytearray = attr.ib(factory=bytearray)
     buffer_search_position: int = 1
+    timeout_config: HdlcTimeoutConfig = attr.ib(factory=HdlcTimeoutConfig)
 
     def send(self, frame) -> bytes:
         """
@@ -94,14 +96,20 @@ class HdlcConnection:
             LOG.debug(f"Added data to buffer", data=data)
             self.buffer += data
 
-    def next_event(self):
+    def next_event(self, timeout: float = None):
         """
         Will try to parse a frame from the buffer. If a frame is found the buffer is
         cleared of the bytes making up the frame and the frame is returned.
         If the frame is not parsable we assume it is not compleate and we return a
         NEED_DATA event to signal we need to receive more data.
+
+        Args:
+            timeout: Optional timeout in seconds. If None, uses
+                timeout_config.to_wait_resp_ms / 1000.
         :return:
         """
+        if timeout is None:
+            timeout = self.timeout_config.to_wait_resp_ms / 1000.0
         frame_bytes = self._find_frame()
         if frame_bytes is None:
             return NEED_DATA

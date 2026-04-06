@@ -7,7 +7,7 @@ DLMS UA 1000-3 Ed. 12 (White Book).
 Parameters are encoded using TLV (Type-Length-Value) format in the
 information field of SNRM and UA frames.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import IntEnum
 from typing import ClassVar, Dict, List, Optional
 
@@ -497,6 +497,19 @@ class HdlcParameterList:
             param = self._parameters[param_type]
             items.append(f"{param_type.name}={param.value}")
         return f"HdlcParameterList({', '.join(items)})"
+
+
+@dataclass
+class HdlcTimeoutConfig:
+    """HDLC 运行时超时/重试配置 (Green Book 8.4.5.6)
+
+    这些参数控制 HDLC 链路层的超时和重试行为。
+    它们是本地配置参数，不参与 SNRM/UA 参数协商。
+    """
+    to_wait_resp_ms: int = 5000
+    max_nb_of_retries: int = 3
+    inactivity_timeout_ms: int = 30000
+    inter_frame_timeout_ms: int = 500
 
 
 def negotiate_parameters(

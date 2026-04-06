@@ -149,10 +149,11 @@ class TestBug4HdlcParameterNegotiation:
 
     def test_parameter_list_window_size(self):
         params = HdlcParameterList()
-        params.set_window_size(3)
+        params.set_window_size_tx(3)
         assert params.window_size == 3
         encoded = params.to_bytes()
-        assert encoded == b'\x01\x01\x03'
+        # Green Book header + WINDOW_SIZE_TX=3
+        assert encoded == b'\x81\x80\x03\x07\x01\x03'
 
     def test_parameter_list_max_info_length(self):
         params = HdlcParameterList()
@@ -166,11 +167,11 @@ class TestBug4HdlcParameterNegotiation:
 
     def test_negotiate_parameters(self):
         client = HdlcParameterList()
-        client.set_window_size(5)
+        client.set_window_size_tx(5)
         client.set_max_info_length_tx(1024)
         server = HdlcParameterList()
-        server.set_window_size(3)
-        server.set_max_info_length_tx(512)
+        server.set_window_size_rx(3)
+        server.set_max_info_length_rx(512)
         negotiated = negotiate_parameters(client, server)
         assert negotiated.window_size == 3
         assert negotiated.max_info_length_tx == 512
@@ -183,7 +184,9 @@ class TestBug4HdlcParameterNegotiation:
 
     def test_parameter_list_roundtrip(self):
         params = HdlcParameterList()
-        params.set_window_size(7)
+        params.set_window_size_tx(7)
+        params.set_max_info_length_tx(2048)
+        params.set_max_info_length_rx(2048)
         params.set_max_info_length_tx(2048)
         params.set_max_info_length_rx(2048)
         encoded = params.to_bytes()

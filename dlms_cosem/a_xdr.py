@@ -220,6 +220,12 @@ class AXdrDecoder:
                 parsed_data.append(self.decode_structure())
                 continue
 
+            if data_class == dlms_data.DontCareData:
+                length = self._get_variable_length()
+                raw = bytes(self.get_bytes(length))
+                parsed_data.append(dlms_data.DontCareData(value=None, raw_bytes=raw).to_python())
+                continue
+
             if data_class.LENGTH != VARIABLE_LENGTH:
                 parsed_data.append(
                     data_class.from_bytes(

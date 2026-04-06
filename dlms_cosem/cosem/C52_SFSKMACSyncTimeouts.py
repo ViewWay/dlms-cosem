@@ -10,6 +10,7 @@ import attr
 
 from dlms_cosem import enumerations as enums
 from dlms_cosem.cosem.obis import Obis
+import struct
 
 
 @attr.s(auto_attribs=True)

@@ -40,11 +40,12 @@ dependencies = [
   "python-dateutil>=2.8.1",
   "typing-extensions>=3.10",
   "structlog>=22.1.0",
+  "gmssl>=3.2",
 ]
 
 [project.optional-dependencies]
 docs = ["mkdocs", "mkdocs-material"]
-test = ["pytest", "pytest-cov", "pytest-sugar"]
+test = ["pytest", "pytest-cov", "pytest-sugar", "pytest-asyncio", "hypothesis"]
 
 # Key management optional dependencies
 keyring = ["keyring"]

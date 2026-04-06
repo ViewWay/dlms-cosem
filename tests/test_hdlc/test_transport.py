@@ -23,9 +23,13 @@ class DummyIo:
 
 
 class FakeHdlcConnection:
-    def __init__(self, events):
+    def __init__(self, events, timeout_ms=None):
         self.events = list(events)
         self.received_data = []
+        from dlms_cosem.hdlc.parameters import HdlcTimeoutConfig
+        self.timeout_config = HdlcTimeoutConfig(
+            to_wait_resp_ms=timeout_ms or HdlcTimeoutConfig().to_wait_resp_ms
+        )
 
     def next_event(self):
         if self.events:
@@ -37,7 +41,9 @@ class FakeHdlcConnection:
 
 
 def test_next_event_raises_communication_error_when_timeout_reached(monkeypatch):
-    hdlc_connection = FakeHdlcConnection(events=[state.NEED_DATA, state.NEED_DATA])
+    hdlc_connection = FakeHdlcConnection(
+        events=[state.NEED_DATA, state.NEED_DATA], timeout_ms=2000
+    )
 
     transport = HdlcTransport(
         client_logical_address=16,

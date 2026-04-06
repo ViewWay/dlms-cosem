@@ -235,6 +235,18 @@ class DataValidationError(DlmsDataError):
     """
 
 
+class DataResultError(DlmsDataError):
+    """Error retrieving data from a COSEM attribute."""
+
+
+class ActionError(DlmsDataError):
+    """Error performing a COSEM action/method."""
+
+
+class HLSError(DlmsException):
+    """Error in HLS procedure. Kept for backward compatibility; prefer HlsError."""
+
+
 # ============================================================================
 # Error Code Enumerations
 # ============================================================================

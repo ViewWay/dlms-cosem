@@ -12,3 +12,7 @@ class HdlcParsingError(HdlcException):
 
 class MissingHdlcFlags(HdlcParsingError):
     """Frame is not enclosed byt HDLC flags"""
+
+
+class HdlcTimeoutError(HdlcException):
+    """HDLC operation timed out after max retries (Green Book 8.4.5.6)"""

@@ -299,20 +299,14 @@ class UnNumberedAcknowledgmentFrame(BaseHdlcFrame):
 
         if information:
             try:
-                # Try to parse as HDLC parameters (TLV format)
-                # Check if it looks like a valid parameter (type, length, value)
                 if len(information) >= 3:
                     first_byte = information[0]
-                    # Valid parameter types are 0x01-0x05
-                    if 0x01 <= first_byte <= 0x05:
-                        second_byte = information[1]
-                        # Length should match remaining data
-                        if second_byte + 2 == len(information) or (
-                            len(information) > second_byte + 2
-                            and 0x01 <= information[second_byte + 2] <= 0x05
-                        ):
-                            parameters = HdlcParameterList.from_bytes(information)
-                            payload = b""
+                    # Recognize Green Book header (0x81 0x80) or valid parameter types (0x05-0x08)
+                    is_green_book_header = (first_byte == 0x81 and information[1] == 0x80)
+                    is_valid_param = (0x05 <= first_byte <= 0x08)
+                    if is_green_book_header or is_valid_param:
+                        parameters = HdlcParameterList.from_bytes(information)
+                        payload = b""
             except Exception:
                 # If parsing fails, use as raw payload
                 payload = information

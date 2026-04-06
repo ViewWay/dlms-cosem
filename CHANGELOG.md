@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Fixed
+- SM2 stub replaced with real GB/T 32918-2016 implementation via `gmssl`
+- Python certificate SM2 calls updated with `public_key` parameter
+- Python: all TODOs resolved
+- `test_hdlc/test_transport.py`: `FakeHdlcConnection` missing `timeout_config` attribute
+- `test_server.py`: incorrect APDU tag bytes (0xE0→0xC1 for SET, 0xD0→0xC3 for ACTION)
+- `test_server.py`: malformed GET request data (missing CosemAttribute bytes)
+- `server.py`: `SetRequestHandler._handle_set_normal` used `apdu.value` instead of `apdu.data`
+- `gmssl` dependency missing from `pyproject.toml`
+
+### Added
+- HDLC timeout/retry configuration (Green Book 8.4.5.6)
+- A-XDR unknown tag tolerance (DontCare type for vendor-specific tags)
+- SM2 real elliptic curve signing/verification
+- `pytest-asyncio` and `hypothesis` to test dependencies
+
+### Changed
+- `sm2_sign()` now requires `public_key` parameter
+- README test count badge updated to 6066
+
+---
+
 ## [1.0.0] - 2026-04-03
 
 ### Added
@@ -21,7 +45,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Async client** — full async/await support with modern Python
 - **CLI tools** — key management and meter utilities
 - **Meter simulation** — complete virtual meter for testing
-- **Comprehensive test suite** — 5146 tests with full coverage
+- **Comprehensive test suite** — 6066 tests with full coverage
 - **Fuzzing harnesses** — property-based testing for protocol robustness
 - **Performance optimizations** — optimized A-XDR and HDLC parsing
 

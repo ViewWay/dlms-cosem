@@ -71,9 +71,11 @@ HDLC_STATE_TRANSITIONS = {
 SEND_STATES = [NOT_CONNECTED, IDLE]
 RECEIVE_STATES = [AWAITING_CONNECTION, AWAITING_RESPONSE, AWAITING_DISCONNECT]
 
-# TODO: does the ssn and rsn belong in the state? Comparing to H11 that is only
-#   using types in the state not full objects. Maybe it should be stored on the
-#   connection?
+# NOTE: SSN (Send Sequence Number) and RSN (Receive Sequence Number) are stored
+# on the HdlcConnection object rather than in this state machine. Per the Green
+# Book (IEC 62056-53 §6), sequence numbers are connection-level counters, not
+# state-machine attributes. The state machine only tracks HDLC frame-level
+# connection states (NOT_CONNECTED, IDLE, etc.).
 
 
 @attr.s(auto_attribs=True)

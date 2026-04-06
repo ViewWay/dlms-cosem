@@ -5,6 +5,7 @@ triggered by other objects (e.g., schedules, register monitors).
 
 Blue Book: DLMS UA 1000-1 Ed. 14, §4.2.10
 """
+import struct
 from typing import Any, ClassVar, Dict, List, Optional
 
 import attr

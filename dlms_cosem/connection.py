@@ -225,6 +225,10 @@ class DlmsConnection:
         init=False,
         factory=xdlms.BlockTransferStatus,
     )
+    _send_blocks: List[xdlms.GeneralBlockTransferRequest] = attr.ib(
+        init=False, factory=list,
+    )
+    _current_send_block: int = attr.ib(init=False, default=0)
 
     @classmethod
     def with_pre_established_association(
@@ -328,9 +332,11 @@ class DlmsConnection:
                 original_size=len(out),
                 max_pdu_size=self.max_pdu_size,
             )
-            # Return the first block
+            # Store blocks for subsequent block requests
             self._block_transfer_send_status.reset()
             self._block_transfer_send_status.total_blocks = len(blocks)
+            self._send_blocks = blocks
+            self._current_send_block = 1  # first block already sent
             return blocks[0].to_bytes()
 
         return out
@@ -358,6 +364,20 @@ class DlmsConnection:
         apdu = XDlmsApduFactory.apdu_from_bytes(self.buffer)
 
         LOG.info("Received DLMS Response", response=apdu)
+
+        # Handle incoming General Block Transfer Request (server asking for next block)
+        if isinstance(apdu, xdlms.GeneralBlockTransferRequest):
+            LOG.info(
+                f"Received block transfer request for block {apdu.block_number}"
+            )
+            next_block = self.handle_block_transfer_request(apdu)
+            if next_block is not None:
+                self.clear_buffer()
+                return apdu  # Return the request so the caller knows to send the response
+            raise exceptions.LocalDlmsProtocolError(
+                f"Received block transfer request for block {apdu.block_number} "
+                f"but no more blocks to send"
+            )
 
         # Handle General Block Transfer Response
         if isinstance(apdu, xdlms.GeneralBlockTransferResponse):
@@ -680,24 +700,35 @@ class DlmsConnection:
 
         Returns None if there are no more blocks to send.
         """
-        if self._block_transfer_send_status.is_complete:
+        if self._current_send_block >= len(self._send_blocks):
             return None
 
-        if (
-            self._block_transfer_send_status.current_block_number
-            >= self._block_transfer_send_status.total_blocks
-        ):
-            return None
+        block = self._send_blocks[self._current_send_block]
+        self._current_send_block += 1
+        self._block_transfer_send_status.current_block_number = self._current_send_block
 
-        # Get the original event data that was split
-        # Note: In a full implementation, we'd need to store the original event
-        # and its split blocks. For now, we'll return None to indicate
-        # the caller should handle the block transfer externally.
-        return None
+        if self._current_send_block >= len(self._send_blocks):
+            self._block_transfer_send_status.is_complete = True
+            self._send_blocks = []
+            self._current_send_block = 0
+
+        return block
+
+    def handle_block_transfer_request(self, request: xdlms.GeneralBlockTransferRequest) -> Optional[bytes]:
+        """
+        Handle an incoming GeneralBlockTransferRequest by returning the next block.
+        Returns None if no more blocks available.
+        """
+        block = self._get_next_block_to_send()
+        if block is None:
+            return None
+        return block.to_bytes()
 
     def reset_block_transfer_send(self):
         """Reset the block transfer send status."""
         self._block_transfer_send_status.reset()
+        self._send_blocks = []
+        self._current_send_block = 0
 
     def reset_block_transfer_receive(self):
         """Reset the block transfer receive status."""

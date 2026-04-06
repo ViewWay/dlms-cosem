@@ -1007,38 +1007,64 @@ class SM2Signature:
 
 def sm2_generate_keypair(seed: Optional[bytes] = None) -> Tuple[SM2PrivateKey, SM2PublicKey]:
     """
-    Generate a new SM2 key pair
+    Generate a new SM2 key pair (GB/T 32918-2016)
+
+    Uses `gmssl` for elliptic curve operations on the SM2 curve.
 
     Args:
-        seed: Optional 32-byte seed for deterministic generation
+        seed: Optional 32-byte seed for deterministic key generation.
+              If None, a random key is generated.
 
     Returns:
-        Tuple of (private_key, public_key)
+        Tuple of (SM2PrivateKey, SM2PublicKey)
+
+    Dependencies:
+        pip install gmssl
     """
-    if seed is None or len(seed) < 32:
-        # Simplified deterministic key for testing
-        private_key_bytes = bytes([i + 1 for i in range(32)])
-    else:
+    from gmssl import sm2 as gm_sm2
+
+    if seed is not None and len(seed) >= 32:
         private_key_bytes = seed[:32]
+    else:
+        import secrets
+        private_key_bytes = secrets.token_bytes(32)
 
-    # Compute public key from private key (simplified)
-    public_key_bytes = bytearray(65)
-    public_key_bytes[0] = 0x04  # Uncompressed format
+    # Use gmssl internals to derive public key from private key
+    ctx = gm_sm2.CryptSM2(public_key='', private_key='', asn1=False)
+    G = ctx.ecc_table['g']  # Generator point (hex string)
+    pub_point = ctx._kg(int(private_key_bytes.hex(), 16), G)  # 128-char hex (X||Y)
 
-    for i in range(32):
-        public_key_bytes[i + 1] = private_key_bytes[i]
-        public_key_bytes[i + 33] = private_key_bytes[(i + 16) % 32]
+    # Build 65-byte uncompressed public key (04 + X + Y)
+    public_key_bytes = bytes.fromhex('04' + pub_point)
 
-    return SM2PrivateKey(private_key_bytes), SM2PublicKey(bytes(public_key_bytes))
+    return SM2PrivateKey(private_key_bytes), SM2PublicKey(public_key_bytes)
 
 
-def sm2_sign(private_key: SM2PrivateKey, message: bytes) -> SM2Signature:
+def _gmssl_pubkey_format(public_key: SM2PublicKey) -> str:
+    """Convert 65-byte uncompressed pubkey to gmssl's 128-char hex (X||Y)"""
+    return public_key.key[1:].hex()  # Skip 0x04 prefix
+
+
+def _gmssl_sig_parse(sig_hex: str) -> SM2Signature:
+    """Parse gmssl signature hex (r||s, 128 chars) to SM2Signature"""
+    raw = bytes.fromhex(sig_hex)
+    # Pad to 32 bytes each if needed
+    r = raw[:32] if len(raw) >= 64 else raw[:len(raw)//2].rjust(32, b'\x00')
+    s = raw[32:] if len(raw) >= 64 else raw[len(raw)//2:].rjust(32, b'\x00')
+    return SM2Signature(r, s)
+
+
+def sm2_sign(private_key: SM2PrivateKey, message: bytes, public_key: SM2PublicKey = None) -> SM2Signature:
     """
-    Sign a message using SM2
+    Sign a message using SM2 (GB/T 32918-2016)
+
+    **Breaking Change:** `public_key` is now required (was optional).
+    Uses `gmssl` for elliptic curve operations.
 
     Args:
         private_key: The SM2 private key
         message: The message to sign
+        public_key: The corresponding public key (required by gmssl for Z value computation)
 
     Returns:
         The signature (r, s)
@@ -1049,19 +1075,27 @@ def sm2_sign(private_key: SM2PrivateKey, message: bytes) -> SM2Signature:
     if len(message) == 0:
         raise SM2Error("Empty message")
 
-    # Compute hash of message
-    digest = hashlib.sha256(message).digest()
+    if public_key is None:
+        raise SM2Error("Public key is required for SM2 signing")
 
-    # Simplified signature generation
-    r = bytes([digest[i] ^ private_key.key[i] for i in range(32)])
-    s = bytes([digest[(i + 16) % 32] ^ private_key.key[(i + 16) % 32] for i in range(32)])
+    from gmssl import sm2 as gm_sm2
 
-    return SM2Signature(r, s)
+    try:
+        pub_hex = _gmssl_pubkey_format(public_key)
+        crypt_sm2 = gm_sm2.CryptSM2(
+            public_key=pub_hex,
+            private_key=private_key.key.hex(),
+            asn1=False
+        )
+        sign_data = crypt_sm2.sign_with_sm3(message)
+        return _gmssl_sig_parse(sign_data)
+    except Exception as e:
+        raise SM2Error(f"SM2 signing failed: {e}")
 
 
 def sm2_verify(public_key: SM2PublicKey, message: bytes, signature: SM2Signature) -> None:
     """
-    Verify a signature using SM2
+    Verify a signature using SM2 (GB/T 32918-2016)
 
     Args:
         public_key: The SM2 public key
@@ -1077,22 +1111,23 @@ def sm2_verify(public_key: SM2PublicKey, message: bytes, signature: SM2Signature
     if public_key.key[0] != 0x04:
         raise SM2Error("Invalid public key format")
 
-    # Compute hash of message
-    digest = hashlib.sha256(message).digest()
+    from gmssl import sm2 as gm_sm2
 
-    # Simplified verification - check signature structure
-    match_count = 0
-
-    for i in range(32):
-        computed = digest[i] ^ public_key.key[i + 1]
-        xor = computed ^ signature.r[i]
-        if xor == 0 or xor == 1 or xor == 2:
-            match_count += 1
-
-    if match_count >= 16:
-        return
-
-    raise SM2Error("Invalid signature")
+    try:
+        pub_hex = _gmssl_pubkey_format(public_key)
+        crypt_sm2 = gm_sm2.CryptSM2(
+            public_key=pub_hex,
+            private_key='',
+            asn1=False
+        )
+        sig_hex = signature.to_bytes().hex()
+        result = crypt_sm2.verify_with_sm3(sig_hex, message)
+        if not result:
+            raise SM2Error("Invalid signature")
+    except SM2Error:
+        raise
+    except Exception as e:
+        raise SM2Error(f"SM2 verification failed: {e}")
 
 
 # ============================================================================
@@ -1179,12 +1214,13 @@ class Certificate:
 
         return bytes(der)
 
-    def sign(self, ca_private_key: SM2PrivateKey, issuer: bytes) -> None:
+    def sign(self, ca_private_key: SM2PrivateKey, ca_public_key: SM2PublicKey, issuer: bytes) -> None:
         """
         Sign certificate with CA private key
 
         Args:
             ca_private_key: The CA's SM2 private key
+            ca_public_key: The CA's SM2 public key
             issuer: The issuer name (typically CA's subject)
 
         Raises:
@@ -1197,7 +1233,7 @@ class Certificate:
         digest = hashlib.sha256(cert_data).digest()
 
         # Sign the digest
-        signature = sm2_sign(ca_private_key, digest)
+        signature = sm2_sign(ca_private_key, digest, public_key=ca_public_key)
 
         # Set signature
         self.signature.algorithm = bytes([0x06, 0x08])  # OID for SM2

@@ -20,16 +20,10 @@ from dlms_cosem.security import AuthenticationMethodManager
 LOG = structlog.get_logger()
 
 
-class DataResultError(Exception):
-    """Error retrieveing data"""
-
-
-class ActionError(Exception):
-    """Error performing an action"""
-
-
-class HLSError(Exception):
-    """error in HLS procedure"""
+# Re-exported from exceptions module for backward compatibility
+DataResultError = exceptions.DataResultError
+ActionError = exceptions.ActionError
+HLSError = exceptions.HLSError
 
 
 @attr.s(auto_attribs=True)

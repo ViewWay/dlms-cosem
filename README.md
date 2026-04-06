@@ -1,8 +1,8 @@
 # dlms-cosem
 
-**Complete DLMS/COSEM protocol stack for Python** — sans-io implementation with HDLC framing, A-XDR codec, 50+ COSEM IC classes, multiple transport layers, security suites, server, automation, and analytics.
+**Complete DLMS/COSEM protocol stack for Python** — sans-io implementation with HDLC framing, A-XDR codec, 100+ COSEM IC classes, multiple transport layers, security suites, server, automation, and analytics.
 
-[![Tests](https://img.shields.io/badge/tests-5178%20passed-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-6066%20passed-brightgreen)]()
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)]()
 [![License: BSL 1.1](https://img.shields.io/badge/license-BSL%201.1-orange.svg)]()
 
@@ -14,7 +14,7 @@
 - **A-XDR Codec**: Complete ASN.1-based DLMS data encoding/decoding
 - **HDLC Framing**: Full LLC/MAC layer with segmentation, windowing, and CRC-16
 
-### COSEM IC Classes (50+)
+### COSEM IC Classes (100+)
 
 | Class | IC | Description |
 |-------|----|-------------|
@@ -135,6 +135,10 @@ pip install dlms-cosem[test]      # Testing
 pip install dlms-cosem[docs]      # Documentation
 pip install dlms-cosem[keyring]   # System keyring support
 ```
+
+### Cryptographic Dependencies
+
+- `gmssl` — SM2/SM4 Chinese national standard cryptography (GB/T 32918-2016)
 
 ## Quick Start
 

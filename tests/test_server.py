@@ -55,21 +55,30 @@ class TestRequestHandlers:
     async def test_get_handler(self):
         model = CosemObjectModel()
         handler = GetRequestHandler()
-        response = await handler.handle(b'\xC0\x01\x00\x01\x08\x00\xFF\x02', model)
+        # GetRequestNormal: C0 01 C0 0003 010108 00FF 02 00
+        response = await handler.handle(
+            bytes.fromhex('c001c000030100010800ff0200'), model
+        )
         assert isinstance(response, bytes)
 
     @pytest.mark.asyncio
     async def test_set_handler(self):
         model = CosemObjectModel()
         handler = SetRequestHandler()
-        response = await handler.handle(b'\xE0\x01\x00', model)
+        # SetRequestNormal: C1 01 C0 0003 010100010800FF 02 00 0600
+        response = await handler.handle(
+            bytes.fromhex('c101c000030100010800ff02000600'), model
+        )
         assert isinstance(response, bytes)
 
     @pytest.mark.asyncio
     async def test_action_handler(self):
         model = CosemObjectModel()
         handler = ActionRequestHandler()
-        response = await handler.handle(b'\xD0\x01\x00', model)
+        # ActionRequestNormal: C3 01 C0 0003 010108 00FF 01 000100
+        response = await handler.handle(
+            bytes.fromhex('c301c000030100010800ff01000100'), model
+        )
         assert isinstance(response, bytes)
 
 
@@ -78,7 +87,9 @@ class TestDlmsRequestRouter:
     async def test_route_get(self):
         router = DlmsRequestRouter()
         model = CosemObjectModel()
-        response = await router.route(b'\xC0\x01\x00', model)
+        response = await router.route(
+            bytes.fromhex('c001c000030100010800ff0200'), model
+        )
         assert isinstance(response, bytes)
 
     @pytest.mark.asyncio

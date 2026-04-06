@@ -450,10 +450,17 @@ class TimeData(BaseDlmsData):
 
 @attr.s(auto_attribs=True)
 class DontCareData(BaseDlmsData):
-    """Nulldata"""
+    """Unknown/unsupported DLMS data type - stores raw bytes for forward compatibility."""
 
     TAG = 255
-    LENGTH = 0
+    LENGTH = VARIABLE_LENGTH
+    raw_bytes: bytes = b''
+
+    def to_python(self) -> Any:
+        return self.raw_bytes
+
+    def value_to_bytes(self) -> bytes:
+        return self.raw_bytes
 
 
 @attr.s(auto_attribs=True)
@@ -502,7 +509,10 @@ class DlmsDataFactory:
 
     @classmethod
     def get_data_class(cls, tag: int):
-        return cls.MAP[tag]
+        try:
+            return cls.MAP[tag]
+        except KeyError:
+            return DontCareData
 
 
 @attr.s(auto_attribs=True)
@@ -535,14 +545,22 @@ class DlmsDataParser:
     def parse_one_entry(self):
 
         tag = self.get_bytes(1)
-        klass = DlmsDataFactory.get_data_class(int.from_bytes(tag, "big"))
+        tag_int = int.from_bytes(tag, "big")
+        klass = DlmsDataFactory.get_data_class(tag_int)
         if klass == DataArray:
             return self.decode_array()
         elif klass == DataStructure:
             return self.decode_structure()
+        elif klass == DontCareData:
+            return self.decode_dont_care(tag_int)
         else:
 
             return self.decode_data(klass)
+
+    def decode_dont_care(self, tag: int) -> DontCareData:
+        length = self.decode_variable_integer()
+        raw = self.get_bytes(length)
+        return DontCareData(value=None, raw_bytes=bytes(raw))
 
     def get_buffer_tail(self) -> bytearray:
         return self.buffer[self.pointer :]
