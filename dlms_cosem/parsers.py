@@ -5,7 +5,7 @@ import attr
 
 from dlms_cosem import a_xdr, cosem, enumerations
 from dlms_cosem.cosem import CosemAttribute
-from dlms_cosem.cosem.association import (
+from dlms_cosem.cosem.C11_AssociationLN import (
     AccessRight,
     AssociationObjectListItem,
     AttributeAccessRights,

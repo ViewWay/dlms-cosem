@@ -15,8 +15,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from dlms_cosem import a_xdr, enumerations
 from dlms_cosem.cosem.obis import Obis
-from dlms_cosem.cosem.register import Register
-from dlms_cosem.cosem.profile_generic import ProfileGeneric
+from dlms_cosem.cosem.C2_Register import Register
+from dlms_cosem.cosem.C5_ProfileGeneric import ProfileGeneric
 from dlms_cosem.hdlc.frames import InformationFrame, ReceiveReadyFrame, SetNormalResponseModeFrame
 from dlms_cosem.hdlc.address import HdlcAddress
 from dlms_cosem.protocol.xdlms.get import GetRequestNormal

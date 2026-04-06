@@ -3,7 +3,7 @@
 OBIS code: 1.0.14.7.0.255
 """
 from dlms_cosem.cosem.obis import Obis
-from dlms_cosem.cosem.register import Register
+from dlms_cosem.cosem.C2_Register import Register
 
 OBIS_FREQUENCY = "1.0.14.7.0.255"
 

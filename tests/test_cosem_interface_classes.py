@@ -3,33 +3,33 @@ import pytest
 
 from dlms_cosem import enumerations as enums
 from dlms_cosem.cosem.obis import Obis
-from dlms_cosem.cosem.data import Data
-from dlms_cosem.cosem.register import Register
-from dlms_cosem.cosem.register_monitor import RegisterMonitor
-from dlms_cosem.cosem.register_activation import RegisterActivation
-from dlms_cosem.cosem.demand_register import DemandRegister
-from dlms_cosem.cosem.register_table import RegisterTable
+from dlms_cosem.cosem.C1_Data import Data
+from dlms_cosem.cosem.C2_Register import Register
+from dlms_cosem.cosem.C13_RegisterMonitor import RegisterMonitor
+from dlms_cosem.cosem.C14_RegisterActivation import RegisterActivation
+from dlms_cosem.cosem.C4_DemandRegister import DemandRegister
+from dlms_cosem.cosem.C61_RegisterTable import RegisterTable
 from dlms_cosem.cosem.single_action_schedule import SingleActionSchedule
-from dlms_cosem.cosem.action_schedule import ActionSchedule
-from dlms_cosem.cosem.script_table import ScriptTable
-from dlms_cosem.cosem.clock import Clock
-from dlms_cosem.cosem.special_day_table import SpecialDayTable, SpecialDayEntry
+from dlms_cosem.cosem.C9_ActionSchedule import ActionSchedule
+from dlms_cosem.cosem.C7_ScriptTable import ScriptTable
+from dlms_cosem.cosem.C6_Clock import Clock
+from dlms_cosem.cosem.C8_SpecialDayTable import SpecialDayTable, SpecialDayEntry
 from dlms_cosem.cosem.tariff_plan import TariffPlan
 from dlms_cosem.cosem.tariff_table import TariffTable
 from dlms_cosem.cosem.season_profile import SeasonProfile, SeasonProfileEntry
 from dlms_cosem.cosem.week_profile import WeekProfile, WeekProfileEntry
 from dlms_cosem.cosem.day_profile import DayProfile, DayProfileEntry
-from dlms_cosem.cosem.lp_setup import LocalPortSetup
-from dlms_cosem.cosem.rs485_setup import RS485Setup
-from dlms_cosem.cosem.infrared_setup import InfraredSetup
-from dlms_cosem.cosem.modem_setup import ModemSetup
-from dlms_cosem.cosem.auto_answer import AutoAnswer
-from dlms_cosem.cosem.modem_configuration import ModemConfiguration
-from dlms_cosem.cosem.nbp_setup import NBIoTProfileSetup
-from dlms_cosem.cosem.lora_setup import LoRaWANSetup, LoRaWANClass, LoRaBand
-from dlms_cosem.cosem.event_log import EventLog, EventLogEntry
-from dlms_cosem.cosem.security_setup import SecuritySetup, SecurityPolicy, CipherAlgorithm
-from dlms_cosem.cosem.association_sn import AssociationSN
+from dlms_cosem.cosem.C102_LocalPortSetup import LocalPortSetup
+from dlms_cosem.cosem.C23_RS485Setup import RS485Setup
+from dlms_cosem.cosem.C101_InfraredSetup import InfraredSetup
+from dlms_cosem.cosem.C24_ModemSetup import ModemSetup
+from dlms_cosem.cosem.C28_AutoAnswer import AutoAnswer
+from dlms_cosem.cosem.C48_ModemConfiguration import ModemConfiguration
+from dlms_cosem.cosem.C106_NBIoTProfileSetup import NBIoTProfileSetup
+from dlms_cosem.cosem.C107_LoRaWANSetup import LoRaWANSetup, LoRaWANClass, LoRaBand
+from dlms_cosem.cosem.C76_EventLog import EventLog, EventLogEntry
+from dlms_cosem.cosem.C29_SecuritySetup import SecuritySetup, SecurityPolicy, CipherAlgorithm
+from dlms_cosem.cosem.C10_AssociationSN import AssociationSN
 from dlms_cosem.cosem.energy_register import (
     create_energy_register, OBIS_ACTIVE_IMPORT, OBIS_ACTIVE_EXPORT,
 )
@@ -38,20 +38,20 @@ from dlms_cosem.cosem.voltage import create_voltage_register
 from dlms_cosem.cosem.current import create_current_register
 from dlms_cosem.cosem.power_factor import create_pf_register
 from dlms_cosem.cosem.frequency import create_frequency_register
-from dlms_cosem.cosem.value_table import ValueTable, ValueEntry, ValueDescriptor
-from dlms_cosem.cosem.iec_public_key import IecPublicKey, KeyAlgorithm, KeyUsage
-from dlms_cosem.cosem.mbus_diagnostic import MbusDiagnostic
-from dlms_cosem.cosem.power_quality_monitor import PowerQualityMonitor
-from dlms_cosem.cosem.harmonic_monitor import HarmonicMonitor, MonitoringMode
-from dlms_cosem.cosem.sag_swell_monitor import SagSwellMonitor
-from dlms_cosem.cosem.compact_data import CompactData, CompactDataField
-from dlms_cosem.cosem.status_mapping import StatusMapping, StatusMappingEntry
-from dlms_cosem.cosem.cosem_data_protection import CosemDataProtection, ProtectedObject
-from dlms_cosem.cosem.function_control import FunctionControl, FunctionControlEntry
-from dlms_cosem.cosem.array_manager import ArrayManager
-from dlms_cosem.cosem.comm_port_protection import CommPortProtection, ProtectedPort
-from dlms_cosem.cosem.activity_calendar import ActivityCalendar, ActivityPeriod
-from dlms_cosem.cosem.sap_assignment import SapAssignment, SapAssignmentEntry
+from dlms_cosem.cosem.C119_ValueTable import ValueTable, ValueEntry, ValueDescriptor
+from dlms_cosem.cosem.C32_IecPublicKey import IecPublicKey, KeyAlgorithm, KeyUsage
+from dlms_cosem.cosem.C83_MbusDiagnostic import MbusDiagnostic
+from dlms_cosem.cosem.C110_PowerQualityMonitor import PowerQualityMonitor
+from dlms_cosem.cosem.C111_HarmonicMonitor import HarmonicMonitor, MonitoringMode
+from dlms_cosem.cosem.C112_SagSwellMonitor import SagSwellMonitor
+from dlms_cosem.cosem.C62_CompactData import CompactData, CompactDataField
+from dlms_cosem.cosem.C55_StatusMapping import StatusMapping, StatusMappingEntry
+from dlms_cosem.cosem.C33_CosemDataProtection import CosemDataProtection, ProtectedObject
+from dlms_cosem.cosem.C78_FunctionControl import FunctionControl, FunctionControlEntry
+from dlms_cosem.cosem.C211_ArrayManager import ArrayManager
+from dlms_cosem.cosem.C115_CommPortProtection import CommPortProtection, ProtectedPort
+from dlms_cosem.cosem.C18_ActivityCalendar import ActivityCalendar, ActivityPeriod
+from dlms_cosem.cosem.C53_SapAssignment import SapAssignment, SapAssignmentEntry
 
 OBIS = Obis.from_string("0.0.1.0.0.255")
 
@@ -687,7 +687,7 @@ class TestCompactData:
 
     def test_add_field(self):
         cd = CompactData(logical_name=OBIS)
-        from dlms_cosem.cosem.compact_data import CompactDataField
+        from dlms_cosem.cosem.C62_CompactData import CompactDataField
         field = CompactDataField(index=1, value=100, offset=0, length=4)
         cd.add_field(field)
         assert len(cd.fields) == 1

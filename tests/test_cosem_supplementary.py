@@ -6,17 +6,17 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from dlms_cosem.cosem.obis import Obis
-from dlms_cosem.cosem.register import Register
-from dlms_cosem.cosem.data import Data
-from dlms_cosem.cosem.clock import Clock
-from dlms_cosem.cosem.extended_register import ExtendedRegister
-from dlms_cosem.cosem.demand_register import DemandRegister
-from dlms_cosem.cosem.profile_generic import ProfileGeneric
-from dlms_cosem.cosem.script_table import ScriptTable
-from dlms_cosem.cosem.action_schedule import ActionSchedule
-from dlms_cosem.cosem.association_sn import AssociationSN
-from dlms_cosem.cosem.security_setup import SecuritySetup
-from dlms_cosem.cosem.image_transfer import ImageTransfer
+from dlms_cosem.cosem.C2_Register import Register
+from dlms_cosem.cosem.C1_Data import Data
+from dlms_cosem.cosem.C6_Clock import Clock
+from dlms_cosem.cosem.C3_ExtendedRegister import ExtendedRegister
+from dlms_cosem.cosem.C4_DemandRegister import DemandRegister
+from dlms_cosem.cosem.C5_ProfileGeneric import ProfileGeneric
+from dlms_cosem.cosem.C7_ScriptTable import ScriptTable
+from dlms_cosem.cosem.C9_ActionSchedule import ActionSchedule
+from dlms_cosem.cosem.C10_AssociationSN import AssociationSN
+from dlms_cosem.cosem.C29_SecuritySetup import SecuritySetup
+from dlms_cosem.cosem.C35_ImageTransfer import ImageTransfer
 
 
 class TestRegister:

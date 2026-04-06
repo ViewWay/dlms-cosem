@@ -26,7 +26,7 @@ class TestCosemFactory:
         assert obj.CLASS_ID == 3
 
     def test_create_clock(self):
-        obj = create_cosem_object(8, (0, 0, 1, 0, 0, 255))
+        obj = create_cosem_object(6, (0, 0, 1, 0, 0, 255))
         assert obj.CLASS_ID == enums.CosemInterface.CLOCK
 
     def test_create_with_extra_kwargs(self):

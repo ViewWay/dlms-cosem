@@ -2,7 +2,7 @@
 import os
 import pytest
 
-from dlms_cosem.cosem.image_transfer import (
+from dlms_cosem.cosem.C35_ImageTransfer import (
     ImageTransfer, ImageBlock, ImageInfo, ImageTransferStatus,
     ImageActivationState, ImageIdentity, ImageTransferCapabilities,
     FemeterOTA,

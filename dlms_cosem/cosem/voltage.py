@@ -7,7 +7,7 @@ OBIS codes (GB/T 17215):
   Average: 1.0.92.7.0.255
 """
 from dlms_cosem.cosem.obis import Obis
-from dlms_cosem.cosem.register import Register
+from dlms_cosem.cosem.C2_Register import Register
 
 OBIS_VOLTAGE_A = "1.0.32.7.0.255"
 OBIS_VOLTAGE_B = "1.0.52.7.0.255"
