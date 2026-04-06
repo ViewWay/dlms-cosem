@@ -1,7 +1,6 @@
 import contextlib
 from datetime import datetime
-from typing import *
-from typing import Any, Generator
+from typing import Any, Dict, Generator, List, Optional, Union
 
 import attr
 import structlog

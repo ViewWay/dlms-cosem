@@ -46,11 +46,15 @@ class DlmsException(Exception):
     Attributes:
         message: Human-readable error message
         error_code: Optional numeric error code for programmatic handling
+        context: Optional dict with additional error context
+        suggestion: Optional suggestion for resolving the error
     """
 
     def __init__(self, message: str, error_code: Optional[int] = None):
         self.message = message
         self.error_code = error_code
+        self.context: Optional[dict] = None
+        self.suggestion: Optional[str] = None
         super().__init__(self.message)
 
     def __str__(self) -> str:

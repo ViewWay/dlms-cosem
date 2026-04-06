@@ -7,7 +7,7 @@ import struct
 import sys
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import TYPE_CHECKING, ClassVar, Optional
+from typing import TYPE_CHECKING, ClassVar, List, Optional, Tuple
 
 import attr
 from cryptography.exceptions import InvalidTag

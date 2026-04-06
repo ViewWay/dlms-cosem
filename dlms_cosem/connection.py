@@ -1,5 +1,5 @@
 import os
-from typing import *
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import attr
 import attrs

@@ -1,14 +1,17 @@
-def validate_information_sequence_number(instance, attribute, value):
+from typing import Any
+
+
+def validate_information_sequence_number(instance: Any, attribute: Any, value: int) -> None:
     if not 0 <= value <= 7:
         raise ValueError(f"Sequence number can only be between 0-7. Got {value}")
 
 
-def validate_hdlc_address_type(instance, attribute, value):
+def validate_hdlc_address_type(instance: Any, attribute: Any, value: str) -> None:
     if value not in ["client", "server"]:
         raise ValueError("HdlcAddress type can only be client or server.")
 
 
-def validate_hdlc_address(instance, attribute, value):
+def validate_hdlc_address(instance: Any, attribute: Any, value: int) -> None:
     """
     Client addresses should always be expressed in 1 byte.
     With the marking bit that leaves 7 bits for address.

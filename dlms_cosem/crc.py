@@ -1,5 +1,5 @@
 from ctypes import c_ushort
-from typing import *
+from typing import List
 
 
 class CRCCCITT:
@@ -27,7 +27,7 @@ class CRCCCITT:
         if not len(self.crc_ccitt_table):
             self.init_crc_table()
 
-    def calculate_for(self, input_data, lsb_first=False) -> bytes:
+    def calculate_for(self, input_data: bytes, lsb_first: bool = False) -> bytes:
         """
 
         :param input_data:
@@ -54,7 +54,7 @@ class CRCCCITT:
         else:
             return b"".join([msb_byte, lsb_byte])
 
-    def _calculate(self, input_data: bytes):
+    def _calculate(self, input_data: bytes) -> int:
 
         crc_value = self.starting_value
 
@@ -65,7 +65,7 @@ class CRCCCITT:
 
         return crc_value
 
-    def init_crc_table(self):
+    def init_crc_table(self) -> None:
         """The algorithm uses tables with pre-calculated values"""
         for i in range(0, 256):
             crc = 0
@@ -82,7 +82,7 @@ class CRCCCITT:
             self.crc_ccitt_table.append(crc)
 
 
-def reverse_byte(byte_to_reverse):
+def reverse_byte(byte_to_reverse: int) -> bytes:
     and_value = 1
     reversed_byte = 0
     for i in range(0, 8):
@@ -92,7 +92,7 @@ def reverse_byte(byte_to_reverse):
     return (chr(reversed_byte)).encode("latin-1")
 
 
-def reverse_byte_message(msg):
+def reverse_byte_message(msg: bytes) -> bytes:
     reversed_mgs = b""
     for char in msg:
         reversed_mgs += reverse_byte(char)
