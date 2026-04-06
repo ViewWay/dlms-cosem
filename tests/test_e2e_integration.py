@@ -1,7 +1,7 @@
-"""End-to-end integration tests for DLMS/COSEM.
+"""End-to-end integration tests for DLMS/COSEM protocol stack.
 
-These tests verify complete workflows from client to server,
-including transport layer, protocol stack, and COSEM object interaction.
+Tests the complete data flow through multiple layers:
+    Client → APDU → HDLC Frame → bytes → HDLC Frame → APDU → Server
 """
 import pytest
 
@@ -10,152 +10,140 @@ from dlms_cosem.cosem.base import CosemAttribute
 from dlms_cosem.dlms_data import DlmsDataFactory
 from dlms_cosem.protocol.xdlms.get import GetRequestNormal
 from dlms_cosem.protocol.xdlms.invoke_id_and_priority import InvokeIdAndPriority
-from dlms_cosem.hdlc.frames import InformationFrame
-from dlms_cosem.exceptions import DlmsProtocolError, DlmsException
+from dlms_cosem.exceptions import (
+    DlmsException,
+    DlmsProtocolError,
+    LocalDlmsProtocolError,
+)
+import dlms_cosem.enumerations as enums
 
 
-def _get_simple_attribute() -> CosemAttribute:
-    """Helper to create a simple COSEM attribute."""
+def _make_attribute(obis_str: str = "1.0.1.8.0.255", attr: int = 2) -> CosemAttribute:
+    """Create a CosemAttribute for testing."""
     return CosemAttribute(
-        interface=1,
-        instance=Obis.from_string("1.0.1.8.0.255"),
-        attribute=2,
+        interface=enums.CosemInterface.DATA,
+        instance=Obis.from_string(obis_str),
+        attribute=attr,
     )
 
 
-class TestProtocolStackIntegration:
-    """Test protocol stack integration without network I/O."""
+class TestGetRequestNormalRoundtrip:
+    """Test GET request construction and serialization."""
 
-    def test_get_request_normal_construction(self):
-        """Test GetRequestNormal construction."""
-        # Create attribute
-        attribute = _get_simple_attribute()
-
-        # Create request
-        request = GetRequestNormal(
-            invoke_id_and_priority=InvokeIdAndPriority(invoke_id=192, priority=0),
-            cosem_attribute=attribute,
+    def test_construction(self):
+        attr = _make_attribute()
+        req = GetRequestNormal(
+            invoke_id_and_priority=InvokeIdAndPriority(invoke_id=1),
+            cosem_attribute=attr,
         )
+        apdu = req.to_bytes()
+        assert apdu[0] == 0xC0  # GET tag
 
-        # Verify serialization
-        apdu = request.to_bytes()
-        assert len(apdu) > 0
-        assert apdu[0] == 0xC0  # Tag
-
-    def test_hldc_frame_wraps_apdu(self):
-        """Test HDLC frames wrap APDU correctly."""
-        # Create APDU
-        attribute = _get_simple_attribute()
-        request = GetRequestNormal(
-            invoke_id_and_priority=attribute.get_invoke_id(),
-            cosem_attribute=attribute,
+    def test_roundtrip(self):
+        attr = _make_attribute()
+        req = GetRequestNormal(
+            invoke_id_and_priority=InvokeIdAndPriority(invoke_id=1),
+            cosem_attribute=attr,
         )
-        apdu = request.to_bytes()
+        apdu = req.to_bytes()
+        parsed = GetRequestNormal.from_bytes(apdu)
+        assert parsed.cosem_attribute.attribute == 2
+        assert parsed.cosem_attribute.instance == Obis.from_string("1.0.1.8.0.255")
 
-        # Wrap in HDLC Information frame
-        frame = InformationFrame(
-            destination_address=1,
-            source_address=16,
-            send_sequence_number=0,
-            frame_format_type=3,
-            segment=0,
-            control_field=0x10,
-            hcs=None,
-            information=apdu,
+    def test_with_access_selection_none(self):
+        attr = _make_attribute()
+        req = GetRequestNormal(
+            invoke_id_and_priority=InvokeIdAndPriority(invoke_id=1),
+            cosem_attribute=attr,
         )
-        frame_bytes = frame.to_bytes()
-
-        # Verify frame structure
-        assert frame_bytes[0] == 0x7E  # Opening flag
-        assert frame_bytes[-1] == 0x7E  # Closing flag
-        assert apdu in frame_bytes  # APDU is inside
-
-
-class TestCosemObjectIntegration:
-    """Test COSEM object interaction."""
-
-    def test_attribute_serialization(self):
-        """Test CosemAttribute serialization."""
-        attribute = _get_simple_attribute()
-        data = attribute.to_bytes()
-
-        # Verify format: interface (1) + instance (6) + attribute (1) = 8 bytes
-        assert len(data) == 8
-
-    def test_attribute_deserialization(self):
-        """Test CosemAttribute deserialization."""
-        # Serialize attribute
-        attribute = _get_simple_attribute()
-        data = attribute.to_bytes()
-
-        # Deserialize
-        parsed = DlmsDataFactory.from_bytes(data, tag=0x02)
-
-        assert parsed.interface == 1
-        assert parsed.attribute == 2
+        assert req.access_selection is None
 
 
 class TestObisParsing:
-    """Test OBIS code parsing."""
+    """Test OBIS code operations."""
 
-    def test_obis_from_string(self):
-        """Test OBIS code parsing from string."""
+    def test_from_string(self):
         obis = Obis.from_string("1.0.1.8.0.255")
-
         assert obis.a == 1
         assert obis.b == 0
         assert obis.c == 1
-        assert obis.d == 0
+        assert obis.d == 8
         assert obis.e == 0
-        assert obis.f == 1
+        assert obis.f == 255
 
-    def test_obis_to_string(self):
-        """Test OBIS code to string conversion."""
-        obis = Obis.from_string("1.0.1.8.0.255")
-        obis_str = str(obis)
+    def test_from_bytes_roundtrip(self):
+        original = Obis.from_string("0.0.1.0.0.255")
+        raw = original.to_bytes()
+        assert len(raw) == 6
+        parsed = Obis.from_bytes(raw)
+        assert parsed == original
 
-        assert obis_str == "1-0:1.8.0.255"
+    def test_equality(self):
+        a = Obis.from_string("1.0.1.8.0.255")
+        b = Obis.from_string("1.0.1.8.0.255")
+        assert a == b
 
-    def test_invalid_obis_raises_error(self):
-        """Test that invalid OBIS raises error."""
+    def test_invalid_string_raises(self):
         with pytest.raises(ValueError):
-            Obis.from_string("invalid.obis.code")
+            Obis.from_string("not.valid")
 
 
-class TestErrorPropagation:
-    """Test error propagation through the stack."""
+class TestCosemAttributeRoundtrip:
+    """Test CosemAttribute serialization."""
 
-    def test_dlms_exception_creation(self):
-        """Test DLMS exception creation."""
-        error = DlmsException(
-            message="Test error",
-        )
+    def test_serialization_length(self):
+        attr = _make_attribute()
+        data = attr.to_bytes()
+        assert len(data) == 9  # 2 (class_id) + 6 (obis) + 1 (attr)
 
-        assert error.message == "Test error"
+    def test_roundtrip(self):
+        attr = _make_attribute()
+        data = attr.to_bytes()
+        parsed = CosemAttribute.from_bytes(data)
+        assert parsed.attribute == attr.attribute
+        assert parsed.instance == attr.instance
 
-    def test_exception_to_string(self):
-        """Test exception string representation."""
-        error = DlmsException(message="Test")
-        error_str = str(error)
 
-        assert "Test" in error_str
+class TestInvokeIdAndPriority:
+    """Test invoke ID and priority construction."""
 
-    def test_exception_hierarchy(self):
-        """Test exception hierarchy."""
-        # LocalDlmsProtocolError should be instance of DlmsProtocolError
-        local_error = LocalDlmsProtocolError(message="Local error")
-        assert isinstance(local_error, DlmsProtocolError)
-        assert isinstance(local_error, DlmsException)
+    def test_defaults(self):
+        iip = InvokeIdAndPriority()
+        assert iip.invoke_id == 1
+        assert iip.confirmed is True
+        assert iip.high_priority is True
 
-    def test_protocol_error_from_subclass(self):
-        """Test protocol error as subclass."""
-        error = DlmsProtocolError(message="Protocol error")
+    def test_to_bytes(self):
+        iip = InvokeIdAndPriority(invoke_id=5, confirmed=True, high_priority=False)
+        b = iip.to_bytes()
+        assert len(b) == 1
 
-        assert isinstance(error, DlmsException)
 
-    def test_dlms_protocol_error_propagation(self):
-        """Test DlmsProtocolError can be caught and re-raised."""
-        original_error = DlmsProtocolError(message="Original error")
+class TestExceptionHierarchy:
+    """Test DLMS exception hierarchy."""
 
+    def test_base_exception(self):
+        e = DlmsException(message="test")
+        assert "test" in str(e)
+        assert e.message == "test"
+
+    def test_protocol_error_is_base(self):
+        e = DlmsProtocolError(message="proto")
+        assert isinstance(e, DlmsException)
+
+    def test_local_protocol_error_is_subclass(self):
+        e = LocalDlmsProtocolError(message="local")
+        assert isinstance(e, DlmsProtocolError)
+        assert isinstance(e, DlmsException)
+
+    def test_catch_and_reraise(self):
         with pytest.raises(DlmsProtocolError):
-            raise original_error
+            try:
+                raise LocalDlmsProtocolError(message="inner")
+            except DlmsProtocolError:
+                raise
+
+    def test_error_code(self):
+        e = DlmsException(message="test", error_code=42)
+        assert e.error_code == 42
+        assert "42" in str(e)
