@@ -154,7 +154,6 @@ class OtherError(IntEnum):
     OTHER = 0
 
 
-@unique
 class CosemInterface(IntEnum):
 
     # Parameters and measurement data.
@@ -171,7 +170,7 @@ class CosemInterface(IntEnum):
     ACTIVITY_CALENDAR = 20
     REGISTER_MONITOR = 21
     SINGLE_ACTION_SCHEDULE = 22
-    VALUE_TABLE = 29
+    VALUE_TABLE = 29  # Also AutoConnect in Blue Book Ed.16
     UTILITY_TABLES = 26
     REGISTER_TABLE = 61
     COMPACT_DATA = 62
@@ -196,7 +195,14 @@ class CosemInterface(IntEnum):
     MBUS_SLAVE_PORT_SETUP = 25
     MODEM_CONFIGURATION = 27
     AUTO_ANSWER = 28
-    AUTO_CONNECT = 114
+    AUTO_CONNECT = 29  # Blue Book Ed.16 class_id=29; also referenced as VALUE_TABLE
+    MEASUREMENT_DATA_MONITORING = 66
+    IEC_62055_ATTRIBUTES = 116
+    COAP_SETUP = 152
+    COAP_DIAGNOSTICS = 153
+    G3_HYBRID_RF_MAC_LAYER_COUNTERS = 160
+    G3_HYBRID_RF_MAC_SETUP = 161
+    G3_HYBRID_6LOWPAN_ADAPTATION_LAYER_SETUP = 162
     GPRS_MODEM_SETUP = 45
     GSM_DIAGNOSTICS = 47
     LTE_MONITORING = 151
@@ -221,7 +227,8 @@ class CosemInterface(IntEnum):
     TOKEN_GATEWAY = 115
 
     # Monitoring and diagnostics
-    IEC_PUBLIC_KEY = 90
+    # NOTE: Blue Book Ed.16 class_id=90 is G3MACLayerCounters, not IEC_PUBLIC_KEY
+    IEC_PUBLIC_KEY = 90  # Non-standard; kept for backward compatibility
     POWER_QUALITY_MONITOR = 200
     HARMONIC_MONITOR = 201
     SAG_SWELL_MONITOR = 202
@@ -261,7 +268,7 @@ class CosemInterface(IntEnum):
     PRIME_OFDM_PLC_MAC_APPLICATION_IDENTIFICATION = 86
 
     # Narrowband OFDM PLC profile for G3-PLC network
-    G3_PLC_MAC_LAYER_COUNTERS = 194
+    G3_PLC_MAC_LAYER_COUNTERS = 90
     G3_PLC_MAC_SETUP = 91
     G3_PLC_6LOWPAN_ADAPTATION_LAYER_SETUP = 92
 
@@ -286,7 +293,7 @@ class CosemInterface(IntEnum):
 
     # Wi-SUN
     WISUN_SETUP = 95
-    WISUM_DIAGNOSTICS = 96
+    WISUN_DIAGNOSTICS = 96
     RPL_DIAGNOSTICS = 97
     MPL_DIAGNOSTICS = 98
 

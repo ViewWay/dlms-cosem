@@ -70,7 +70,7 @@ class TestCosemInterface:
         assert enums.CosemInterface.AUTO_ANSWER == 28
 
     def test_auto_connect(self):
-        assert enums.CosemInterface.AUTO_CONNECT == 114
+        assert enums.CosemInterface.AUTO_CONNECT == 29  # Blue Book Ed.16: class_id=29
 
     def test_value_table(self):
         assert enums.CosemInterface.VALUE_TABLE == 29
