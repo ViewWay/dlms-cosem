@@ -15,16 +15,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `test_server.py`: malformed GET request data (missing CosemAttribute bytes)
 - `server.py`: `SetRequestHandler._handle_set_normal` used `apdu.value` instead of `apdu.data`
 - `gmssl` dependency missing from `pyproject.toml`
+- `test_connection_security.py`: `AssociationResult.REJECTED` → `REJECTED_PERMANENT`
+- `test_hdlc_practical.py`: API adjustments — `FCS.calculate()`→`calculate_for()`, `information`→`payload`, `HDLC_FLAG` as int (0x7E)
 
 ### Added
 - HDLC timeout/retry configuration (Green Book 8.4.5.6)
 - A-XDR unknown tag tolerance (DontCare type for vendor-specific tags)
 - SM2 real elliptic curve signing/verification
 - `pytest-asyncio` and `hypothesis` to test dependencies
+- **Connection security tests** (36 tests) — AARQ/AARE, RLRQ/RLRE, SecurityControlField, SM4 cipher, 5 auth mechanisms, state machine transitions
+- **HDLC practical tests** (19 tests, total HDLC: 314) — FCS determinism, frame roundtrip, address validation, invalid frames, APDU extraction, HDLC flag position
+- **MockTransport** — configurable mock transport for client/connection testing (inspired by pdlms)
+- **Golden vector fixtures** — SAMPLE_AARE_ACCEPTED, system_title, encryption/auth keys
+- **Test framework enhancements** — new conftest fixtures, mock transport with queue support
 
 ### Changed
 - `sm2_sign()` now requires `public_key` parameter
-- README test count badge updated to 6066
+- README test count badge updated to 6243
+- MockTransport: _responses stores bytes not strings
 
 ---
 
