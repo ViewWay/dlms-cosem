@@ -314,6 +314,10 @@ class HdlcParameterList:
         self.set(HdlcParameterType.MAX_INFORMATION_FIELD_LENGTH_RX, length)
 
     def get(self, param_type: HdlcParameterType, default: Optional[int] = None) -> Optional[int]:
+        """Get parameter value, with optional default."""
+        if param_type in self._parameters:
+            return self._parameters[param_type].value
+        return default
         """
         Get a parameter value.
 
@@ -331,12 +335,12 @@ class HdlcParameterList:
     @property
     def window_size_tx(self) -> int:
         """Get the window size for transmission, or default if not set."""
-        return self.get(HdlcParameterType.WINDOW_SIZE_TX, DEFAULT_WINDOW_SIZE_TX)
+        return self.get(HdlcParameterType.WINDOW_SIZE_TX, DEFAULT_WINDOW_SIZE_TX) or DEFAULT_WINDOW_SIZE_TX
 
     @property
     def window_size_rx(self) -> int:
         """Get the window size for reception, or default if not set."""
-        return self.get(HdlcParameterType.WINDOW_SIZE_RX, DEFAULT_WINDOW_SIZE_RX)
+        return self.get(HdlcParameterType.WINDOW_SIZE_RX, DEFAULT_WINDOW_SIZE_RX) or DEFAULT_WINDOW_SIZE_RX
 
     @property
     def window_size(self) -> int:
@@ -353,14 +357,14 @@ class HdlcParameterList:
         """Get the max TX info length, or default if not set."""
         return self.get(
             HdlcParameterType.MAX_INFORMATION_FIELD_LENGTH_TX, DEFAULT_MAX_INFO_LENGTH
-        )
+        ) or DEFAULT_MAX_INFO_LENGTH  # type: ignore[return-value]
 
     @property
     def max_info_length_rx(self) -> int:
         """Get the max RX info length, or default if not set."""
         return self.get(
             HdlcParameterType.MAX_INFORMATION_FIELD_LENGTH_RX, DEFAULT_MAX_INFO_LENGTH
-        )
+        ) or DEFAULT_MAX_INFO_LENGTH  # type: ignore[return-value]
 
     @property
     def max_info_length(self) -> int:
@@ -575,7 +579,7 @@ def negotiate_parameters(
         server_value = server_params.get(server_type, range_info.default_value)
 
         # Negotiate: use minimum (both represent maximum capabilities)
-        negotiated_value = min(client_value, server_value)
+        negotiated_value = min(client_value or 0, server_value or 0)
 
         # Ensure the negotiated value is within valid range
         negotiated_value = max(
@@ -594,7 +598,7 @@ def negotiate_parameters(
         server_value = server_params.get(server_type, range_info.default_value)
         client_value = client_params.get(client_type, range_info.default_value)
 
-        negotiated_value = min(client_value, server_value)
+        negotiated_value = min(client_value or 0, server_value or 0)
         negotiated_value = max(
             range_info.min_value, min(negotiated_value, range_info.max_value)
         )

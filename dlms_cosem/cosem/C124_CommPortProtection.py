@@ -168,11 +168,14 @@ class CommPortProtection:
         """Encode octet-string (tag 0x09)."""
         return self._encode_tlv(0x09, data)
 
-    def _encode_boolean(self, value: bool) -> bytes:
+    def _encode_boolean(self, value: bool | None) -> bytes:
+        if value is None: return bytes([0x00])
         """Encode boolean (tag 0x03)."""
         return self._encode_tlv(0x03, bytes([1 if value else 0]))
 
-    def _encode_integer(self, value: int) -> bytes:
+    def _encode_integer(self, value: int | None) -> bytes:
+        if value is None:
+            return bytes([0x00])
         """Encode integer with appropriate size."""
         if -128 <= value <= 127:
             return self._encode_tlv(0x0F, value.to_bytes(1, 'big', signed=True))
@@ -226,7 +229,8 @@ class CommPortProtection:
                 inner += self._encode_tlv(0x09, str(item).encode('utf-8'))
         return self._encode_tlv(0x01, bytes(inner))
 
-    def _encode_structure(self, data: dict) -> bytes:
+    def _encode_structure(self, data: dict | None) -> bytes:
+        if data is None: return bytes([0x00])
         """Encode structure (tag 0x02)."""
         return self._encode_tlv(0x02, self._encode_dict_as_structure(data))
 
@@ -315,7 +319,7 @@ class CommPortProtection:
         """Decode DLMS datetime octet-string."""
         from datetime import datetime
         if len(data) < 9:
-            return None
+            return None  # type: ignore[return-value]
         try:
             return datetime(
                 (data[0] << 8) | data[1], data[2], data[3],
@@ -324,7 +328,7 @@ class CommPortProtection:
                 data[6] if data[6] != 0xFF else 0,
             )
         except (ValueError, IndexError):
-            return None
+            return None  # type: ignore[return-value]
 
     def _any_to_bytes(self, value) -> bytes:
         """Convert any value to bytes for serialization."""

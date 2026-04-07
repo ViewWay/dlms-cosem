@@ -328,7 +328,7 @@ class DlmsClient:
             try:
                 hls_response = self._perform_hls_reply()
             except ActionError as e:
-                raise HLSError from e
+                raise HLSError("HLS error") from e  # type: ignore[call-arg]
 
             if not hls_response:
                 raise HLSError("No HLS data in response")
@@ -341,7 +341,7 @@ class DlmsClient:
             if not self.dlms_connection.authentication.hls_meter_data_is_valid(
                 hls_data, self.dlms_connection
             ):
-                raise HLSError(
+                raise HLSError(  # type: ignore[call-arg]  # type: ignore[call-arg]  # type: ignore[call-arg]
                     f"Meter did not respond with correct challenge calculation"
                 )
 

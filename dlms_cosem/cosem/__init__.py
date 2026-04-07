@@ -6,7 +6,7 @@ from dlms_cosem.cosem.obis import Obis
 from dlms_cosem.cosem.C1_Data import Data
 from dlms_cosem.cosem.C3_Register import Register
 from dlms_cosem.cosem.C4_ExtendedRegister import ExtendedRegister
-from dlms_cosem.cosem.max_demand_register import MaxDemandRegister
+from dlms_cosem.cosem.C5_MaxDemandRegister import MaxDemandRegister
 from dlms_cosem.cosem.value_with_register import ValueWithRegister
 from dlms_cosem.cosem.C21_RegisterMonitor import RegisterMonitor
 from dlms_cosem.cosem.C6_RegisterActivation import RegisterActivation
@@ -31,20 +31,20 @@ from dlms_cosem.cosem.C24_IECTwistedPairSetup import InfraredSetup
 from dlms_cosem.cosem.modem_setup import ModemSetup
 from dlms_cosem.cosem.C28_AutoAnswer import AutoAnswer
 from dlms_cosem.cosem.C27_ModemConfiguration import ModemConfiguration
-from dlms_cosem.cosem.nbp_setup import NBIoTProfileSetup
-from dlms_cosem.cosem.lora_setup import LoRaWANSetup
+from dlms_cosem.cosem.C106_NBIoTProfileSetup import NBIoTProfileSetup
+from dlms_cosem.cosem.C107_LoRaWANSetup import LoRaWANSetup as LoRaWANSetupC107  # type: ignore[assignment]
 from dlms_cosem.cosem.event_log import EventLog
 from dlms_cosem.cosem.standard_event_log import StandardEventLog, StandardEventCode
 from dlms_cosem.cosem.utility_event_log import UtilityEventLog
 from dlms_cosem.cosem.event_notification import EventNotification
-from dlms_cosem.cosem.quality_control import QualityControl, QualityFlag
-from dlms_cosem.cosem.interrogation_interface import InterrogationInterface
+from dlms_cosem.cosem.C31_QualityControl import QualityControl, QualityFlag
+from dlms_cosem.cosem.C15_InterrogationInterface import InterrogationInterface
 from dlms_cosem.cosem.load_profile_switch import LoadProfileSwitch
 from dlms_cosem.cosem.C64_SecuritySetup import SecuritySetup
 from dlms_cosem.cosem.C12_AssociationSN import AssociationSN
-from dlms_cosem.cosem.gprs_setup import GPRSSetup
+from dlms_cosem.cosem.C108_GPRSSetup import GPRSSetup
 from dlms_cosem.cosem.C41_TCPUDPSetup import TcpUdpSetup
-from dlms_cosem.cosem.zigbee_setup import ZigBeeSetup
+from dlms_cosem.cosem.C110_ZigBeeSetup import ZigBeeSetup
 from dlms_cosem.cosem.energy_register import (
     create_energy_register, OBIS_ACTIVE_IMPORT, OBIS_ACTIVE_EXPORT,
     OBIS_REACTIVE_IMPORT, OBIS_REACTIVE_EXPORT,
@@ -57,9 +57,9 @@ from dlms_cosem.cosem.frequency import create_frequency_register
 from dlms_cosem.cosem.value_table import ValueTable, ValueEntry, ValueDescriptor
 from dlms_cosem.cosem.iec_public_key import IecPublicKey, KeyAlgorithm, KeyUsage
 from dlms_cosem.cosem.C77_MBusDiagnostic import MbusDiagnostic
-from dlms_cosem.cosem.power_quality_monitor import PowerQualityMonitor
-from dlms_cosem.cosem.harmonic_monitor import HarmonicMonitor, MonitoringMode
-from dlms_cosem.cosem.sag_swell_monitor import SagSwellMonitor
+from dlms_cosem.cosem.C200_PowerQualityMonitor import PowerQualityMonitor
+from dlms_cosem.cosem.C201_HarmonicMonitor import HarmonicMonitor, MonitoringMode
+from dlms_cosem.cosem.C202_SagSwellMonitor import SagSwellMonitor
 from dlms_cosem.cosem.C62_CompactData import CompactData, CompactDataField
 from dlms_cosem.cosem.C63_StatusMapping import StatusMapping, StatusMappingEntry
 from dlms_cosem.cosem.C30_COSEMDataProtection import CosemDataProtection, ProtectedObject

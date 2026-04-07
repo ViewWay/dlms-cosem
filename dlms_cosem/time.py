@@ -118,13 +118,15 @@ def get_optional_value(
     optional_indicator: bytes,
     replace_with: Optional[int] = None,
     signed: bool = False,
-) -> Optional[int]:
+) -> int | None:
     if isinstance(value, bytes):
         if value == optional_indicator:
             return replace_with
     else:
         if value == int.from_bytes(optional_indicator, "big", signed=signed):
             return replace_with
+    if isinstance(value, bytes):
+        return int.from_bytes(value, "big")
     return value
 
 
@@ -173,9 +175,9 @@ def date_from_bytes(source_bytes: bytes) -> date:
     if len(source_bytes) != 5:
         raise ValueError(f"Date is represented by 5 bytes, but got {len(source_bytes)}")
 
-    year = get_optional_value(int.from_bytes(source_bytes[:2], "big"), b"\xff\xff")
-    month = get_optional_value(source_bytes[2], b"\xff")
-    day_of_month = get_optional_value(source_bytes[3], b"\xff")
+    year = get_optional_value(int.from_bytes(source_bytes[:2], "big"), b"\xff\xff") or 2000
+    month = get_optional_value(source_bytes[2], b"\xff") or 1
+    day_of_month = get_optional_value(source_bytes[3], b"\xff") or 1
     day_of_week = get_optional_value(source_bytes[4], b"\xff")
     validate_month(month)
     validate_day(day_of_month)
@@ -210,10 +212,10 @@ def time_from_bytes(source_bytes: bytes) -> time:
     if len(source_bytes) != 4:
         raise ValueError(f"Time is represented by 4 bytes, but got {len(source_bytes)}")
 
-    hour: int = get_optional_value(source_bytes[0], b"\xff", replace_with=0)
-    minute: int = get_optional_value(source_bytes[1], b"\xff", replace_with=0)
-    seconds: int = get_optional_value(source_bytes[2], b"\xff", replace_with=0)
-    hundredths: int = get_optional_value(source_bytes[3], b"\xff", replace_with=0)
+    hour: int = get_optional_value(source_bytes[0], b"\xff", replace_with=0) or 0
+    minute: int = get_optional_value(source_bytes[1], b"\xff", replace_with=0) or 0
+    seconds: int = get_optional_value(source_bytes[2], b"\xff", replace_with=0) or 0
+    hundredths: int = get_optional_value(source_bytes[3], b"\xff", replace_with=0) or 0
     validate_hour(hour)
     validate_minute_or_second(minute)
     validate_minute_or_second(seconds)
@@ -316,10 +318,13 @@ def datetime_to_bytes(dt: datetime, clock_status: Optional[ClockStatus] = None):
     if dt.tzinfo is None:
         timezone_bytes = b"\x80\x00"
     else:
-        # negating the offset to match dlms standard offset representation
-        timezone_bytes = int(-(dt.utcoffset().total_seconds() / 60)).to_bytes(
-            2, "big", signed=True
-        )
+        offset = dt.utcoffset()
+        if offset is not None:
+            timezone_bytes = int(-(offset.total_seconds() / 60)).to_bytes(
+                2, "big", signed=True
+            )
+        else:
+            timezone_bytes = int(0).to_bytes(2, "big", signed=True)
 
     if clock_status is None:
         clock_status_bytes = ClockStatus().to_bytes()

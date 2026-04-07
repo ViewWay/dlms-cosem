@@ -193,7 +193,7 @@ class BlockingTcpIO:
             idx = buffer.find(end)
             if idx >= 0:
                 extra = buffer[idx + len(end):]
-                self._recv_buffer = bytearray(extra)
+                self._recv_buffer = bytearray(extra)  # type: ignore[has-type]  # type: ignore[assignment]
                 return bytes(buffer[:idx + len(end)])
         while len(buffer) < max_size:
             try:
@@ -204,7 +204,7 @@ class BlockingTcpIO:
                 idx = buffer.find(end)
                 if idx >= 0:
                     extra = buffer[idx + len(end):]
-                    self._recv_buffer = bytearray(extra)
+                    self._recv_buffer = bytearray(extra)  # type: ignore[has-type]  # type: ignore[assignment]
                     return bytes(buffer[:idx + len(end)])
             except socket.timeout:
                 continue

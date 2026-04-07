@@ -222,7 +222,7 @@ class ApplicationAssociationRequest:
         # Assumes that the protocol-version is 1 and we don't need to decode it
 
         # Decode the AARQ  data
-        object_dict = dict()
+        object_dict: dict[str, Any] = dict()
         # use the data in tags to go through the bytes and create objects.
         while True:
             object_tag = aarq_data.pop(0)

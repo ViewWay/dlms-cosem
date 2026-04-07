@@ -25,8 +25,8 @@ from dlms_cosem.cosem.C24_IECTwistedPairSetup import InfraredSetup
 from dlms_cosem.cosem.modem_setup import ModemSetup
 from dlms_cosem.cosem.C28_AutoAnswer import AutoAnswer
 from dlms_cosem.cosem.C27_ModemConfiguration import ModemConfiguration
-from dlms_cosem.cosem.nbp_setup import NBIoTProfileSetup
-from dlms_cosem.cosem.lora_setup import LoRaWANSetup, LoRaWANClass, LoRaBand
+from dlms_cosem.cosem.C106_NBIoTProfileSetup import NBIoTProfileSetup
+from dlms_cosem.cosem.C107_LoRaWANSetup import LoRaWANSetup, LoRaWANClass, LoRaBand
 from dlms_cosem.cosem.event_log import EventLog, EventLogEntry
 from dlms_cosem.cosem.C64_SecuritySetup import SecuritySetup, SecurityPolicy, CipherAlgorithm
 from dlms_cosem.cosem.C12_AssociationSN import AssociationSN
@@ -41,9 +41,9 @@ from dlms_cosem.cosem.frequency import create_frequency_register
 from dlms_cosem.cosem.value_table import ValueTable, ValueEntry, ValueDescriptor
 from dlms_cosem.cosem.iec_public_key import IecPublicKey, KeyAlgorithm, KeyUsage
 from dlms_cosem.cosem.C77_MBusDiagnostic import MbusDiagnostic
-from dlms_cosem.cosem.power_quality_monitor import PowerQualityMonitor
-from dlms_cosem.cosem.harmonic_monitor import HarmonicMonitor, MonitoringMode
-from dlms_cosem.cosem.sag_swell_monitor import SagSwellMonitor
+from dlms_cosem.cosem.C200_PowerQualityMonitor import PowerQualityMonitor
+from dlms_cosem.cosem.C201_HarmonicMonitor import HarmonicMonitor, MonitoringMode
+from dlms_cosem.cosem.C202_SagSwellMonitor import SagSwellMonitor
 from dlms_cosem.cosem.C62_CompactData import CompactData, CompactDataField
 from dlms_cosem.cosem.C63_StatusMapping import StatusMapping, StatusMappingEntry
 from dlms_cosem.cosem.C30_COSEMDataProtection import CosemDataProtection, ProtectedObject

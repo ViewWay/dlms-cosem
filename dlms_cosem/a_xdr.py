@@ -82,7 +82,7 @@ class Attribute:
 
 
 @attr.s(auto_attribs=True)
-class Sequence:
+class Sequence:  # type: ignore[no-redef]
 
     attribute_name: str
     instance_factory: dlms_data.DlmsDataFactory = attr.ib(
@@ -158,7 +158,7 @@ class AXdrDecoder:
 
     def decode_single(self, _type, index: int) -> Dict:
         if isinstance(_type, Attribute):
-            return {_type.attribute_name: self.decode_attribute(_type, index)}
+            return {_type.attribute_name: self.decode_attribute(_type, index)}  # type: ignore[attr-defined]
 
         elif isinstance(_type, Choice):
             choice = _type.choices[bytes(self.get_bytes(1))]
@@ -245,9 +245,9 @@ class AXdrDecoder:
             continue
 
         if len(parsed_data) == 1:
-            return {seq.attribute_name: parsed_data[0]}
+            return {seq.attribute_name: parsed_data[0]}  # type: ignore[attr-defined]
 
-        return {seq.attribute_name: parsed_data}
+        return {seq.attribute_name: parsed_data}  # type: ignore[attr-defined]
 
     def decode_sequence_of(self):
 
