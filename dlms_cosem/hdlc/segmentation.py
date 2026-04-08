@@ -5,15 +5,12 @@ This module provides functionality for handling segmented HDLC frames,
 where large information fields are split across multiple frames.
 """
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from dlms_cosem.hdlc.frames import InformationFrame
-
+from typing import List, Dict, Optional
 import structlog
 
-from dlms_cosem.hdlc import exceptions as hdlc_exceptions
 from dlms_cosem.hdlc.address import HdlcAddress
+from dlms_cosem.hdlc.frames import InformationFrame
+from dlms_cosem.hdlc import exceptions as hdlc_exceptions
 
 LOG = structlog.get_logger()
 
@@ -253,8 +250,8 @@ def split_information_into_segments(
 
 
 def create_segmented_i_frames(
-    destination_address: HdlcAddress,
-    source_address: HdlcAddress,
+    destination_address: "HdlcAddress",
+    source_address: "HdlcAddress",
     information_segments: List[bytes],
     send_sequence: int,
     receive_sequence: int,
