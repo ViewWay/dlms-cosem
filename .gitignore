@@ -89,6 +89,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+/config/
 
 # Spyder project settings
 .spyderproject
@@ -105,3 +106,22 @@ venv.bak/
 
 # pycharm
 .idea/
+
+# Temporary test scripts
+scripts/test_*.py
+scripts/run_*.py
+scripts/scan_ports.py
+scripts/verify_*.py
+scripts/debug_*.py
+scripts/find_*.py
+scripts/quick_start_*.py
+quick_test.py
+quick_verify.py
+verify_modules.py
+run_*.py
+run_*.bat
+hls_*.py
+hls_*.txt
+test_*.txt
+test_hls_output.txt
+*.bat
