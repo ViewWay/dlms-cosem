@@ -43,7 +43,7 @@ class AsyncTcpIO:
                 self._writer.close()
                 await self._writer.wait_closed()
             except OSError as e:
-                raise exceptions.CommunicationError(str(e)) from e  # type: ignore[call-arg]
+                raise exceptions.CommunicationError from e
             finally:
                 self._writer = None
                 self._reader = None

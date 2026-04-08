@@ -35,13 +35,15 @@ class Log:
     Logger configuration and management.
 
     Provides a singleton-like logger instance with configurable
-    log level and output destination.
+    log level and output destination. Thread-safe.
     """
-    _lock = threading.Lock()
 
     def __init__(self):
         self.level = logging.INFO
         self._report_logger: Optional[logging.Logger] = None
+        self._lock = threading.Lock()
+        self._initialized = False
+        self._handlers_added = False  # Track if handlers were added
         self.log_report_path = os.path.join(
             LogConstant.LOG_DIR,
             datetime.datetime.now().strftime("%Y%m%d_%H%M%S"),
@@ -50,20 +52,21 @@ class Log:
     @property
     def logger(self) -> logging.Logger:
         """Get or create the logger instance (thread-safe)."""
-        if self._report_logger is not None:
+        # Fast path: if already initialized, return without lock
+        if self._initialized and self._report_logger is not None:
             return self._report_logger
 
+        # Slow path: acquire lock and initialize
         with self._lock:
-            # Double-checked locking pattern
-            if self._report_logger is not None:
+            # Double-check: another thread may have initialized while we waited
+            if self._initialized and self._report_logger is not None:
                 return self._report_logger
-
 
             self._report_logger = logging.getLogger("dlms_cosem.log")
             self._report_logger.propagate = False
 
-
-            if not self._report_logger.handlers:
+            # Only add handlers once
+            if not self._handlers_added:
                 # Console handler
                 h = logging.StreamHandler()
                 h.setFormatter(logging.Formatter(LogConstant.LOG_REPORT_FORMAT))
@@ -77,8 +80,23 @@ class Log:
                     fh.setFormatter(logging.Formatter(LogConstant.LOG_REPORT_FORMAT))
                     self._report_logger.addHandler(fh)
 
+                self._handlers_added = True
+
             self._report_logger.setLevel(self.level)
+            self._initialized = True
             return self._report_logger
+
+    def cleanup(self):
+        """Clean up logger resources.
+
+        Call this when shutting down to release file handles.
+        """
+        with self._lock:
+            if self._report_logger and self._handlers_added:
+                for handler in self._report_logger.handlers[:]:
+                    handler.close()
+                    self._report_logger.removeHandler(handler)
+                self._handlers_added = False
 
     def create_logger(self) -> logging.Logger:
         """Create and return the logger instance."""

@@ -20,7 +20,7 @@ def _register_classes() -> Dict[int, Type]:
     from dlms_cosem.cosem.C3_Register import Register
     from dlms_cosem.cosem.C4_ExtendedRegister import ExtendedRegister
     from dlms_cosem.cosem.C5_DemandRegister import DemandRegister
-    from dlms_cosem.cosem.C5_MaxDemandRegister import MaxDemandRegister
+    from dlms_cosem.cosem.max_demand_register import MaxDemandRegister
     from dlms_cosem.cosem.C6_RegisterActivation import RegisterActivation
     from dlms_cosem.cosem.C21_RegisterMonitor import RegisterMonitor
     from dlms_cosem.cosem.C61_RegisterTable import RegisterTable
@@ -42,13 +42,13 @@ def _register_classes() -> Dict[int, Type]:
     from dlms_cosem.cosem.C41_TCPUDPSetup import TcpUdpSetup
     from dlms_cosem.cosem.modem_setup import ModemSetup
     from dlms_cosem.cosem.C27_ModemConfiguration import ModemConfiguration
-    from dlms_cosem.cosem.C15_InterrogationInterface import InterrogationInterface
+    from dlms_cosem.cosem.interrogation_interface import InterrogationInterface
     from dlms_cosem.cosem.attribute_with_selection import CosemAttributeWithSelection
-    from dlms_cosem.cosem.C108_GPRSSetup import GPRSSetup as GprsSetup
-    from dlms_cosem.cosem.C106_NBIoTProfileSetup import NBIoTProfileSetup as NbpSetup
-    from dlms_cosem.cosem.C110_ZigBeeSetup import ZigBeeSetup as ZigbeeSetup
+    from dlms_cosem.cosem.gprs_setup import GPRSSetup as GprsSetup
+    from dlms_cosem.cosem.nbp_setup import NBIoTProfileSetup as NbpSetup
+    from dlms_cosem.cosem.zigbee_setup import ZigBeeSetup as ZigbeeSetup
     from dlms_cosem.cosem.C18_ImageTransfer import ImageTransferStatus as ImageTransfer
-    from dlms_cosem.cosem.C31_QualityControl import QualityFlag as QualityControl
+    from dlms_cosem.cosem.quality_control import QualityFlag as QualityControl
     from dlms_cosem.cosem.standard_event_log import StandardEventCode as StandardEventLog
     from dlms_cosem.cosem.utility_event_log import UtilityEventLogEntry as UtilityEventLog
     from dlms_cosem.cosem.event_log import EventLogEntry as EventLog
@@ -72,9 +72,9 @@ def _register_classes() -> Dict[int, Type]:
     from dlms_cosem.cosem.value_table import ValueTable
     from dlms_cosem.cosem.iec_public_key import IecPublicKey
     from dlms_cosem.cosem.C77_MBusDiagnostic import MbusDiagnostic
-    from dlms_cosem.cosem.C200_PowerQualityMonitor import PowerQualityMonitor
-    from dlms_cosem.cosem.C201_HarmonicMonitor import HarmonicMonitor
-    from dlms_cosem.cosem.C202_SagSwellMonitor import SagSwellMonitor
+    from dlms_cosem.cosem.power_quality_monitor import PowerQualityMonitor
+    from dlms_cosem.cosem.harmonic_monitor import HarmonicMonitor
+    from dlms_cosem.cosem.sag_swell_monitor import SagSwellMonitor
     from dlms_cosem.cosem.C62_CompactData import CompactData
     from dlms_cosem.cosem.C63_StatusMapping import StatusMapping
     from dlms_cosem.cosem.C30_COSEMDataProtection import CosemDataProtection

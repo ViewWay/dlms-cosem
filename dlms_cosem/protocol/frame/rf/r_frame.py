@@ -68,16 +68,16 @@ class RFSignalQuality:
 
     @classmethod
     def from_bytes(cls, data: bytes) -> "RFSignalQuality":
-        """Parse signal quality from 8 bytes."""
+        """Parse signal quality from 8 bytes (2 bytes per field)."""
         if len(data) < 8:
             raise ValueError(
                 f"RFSignalQuality requires 8 bytes, got {len(data)}"
             )
 
-        uplink_rssi = data[0]
-        uplink_snr = data[1]
-        downlink_rssi = data[2]
-        downlink_snr = data[3]
+        uplink_rssi = int.from_bytes(data[0:2], byteorder='big')
+        uplink_snr = int.from_bytes(data[2:4], byteorder='big')
+        downlink_rssi = int.from_bytes(data[4:6], byteorder='big')
+        downlink_snr = int.from_bytes(data[6:8], byteorder='big')
 
         return cls(
             uplink_signal_strength=uplink_rssi,
@@ -87,14 +87,13 @@ class RFSignalQuality:
         )
 
     def to_bytes(self) -> bytes:
-        """Encode signal quality to 8 bytes (4 values + 4 padding)."""
-        return bytes([
-            self.uplink_signal_strength,
-            self.uplink_snr,
-            self.downlink_signal_strength,
-            self.downlink_snr,
-            0, 0, 0, 0  # Pad to 8 bytes
-        ])
+        """Encode signal quality to 8 bytes (2 bytes per field)."""
+        return (
+            self.uplink_signal_strength.to_bytes(2, byteorder='big') +
+            self.uplink_snr.to_bytes(2, byteorder='big') +
+            self.downlink_signal_strength.to_bytes(2, byteorder='big') +
+            self.downlink_snr.to_bytes(2, byteorder='big')
+        )
 
 
 @attr.s(auto_attribs=True)
@@ -112,14 +111,14 @@ class RFChannelState:
 
     @classmethod
     def from_bytes(cls, data: bytes) -> "RFChannelState":
-        """Parse channel state from 4 bytes."""
+        """Parse channel state from 4 bytes (2 bytes per field)."""
         if len(data) < 4:
             raise ValueError(
                 f"RFChannelState requires 4 bytes, got {len(data)}"
             )
 
-        link_state = data[0]
-        channel_state = data[1]
+        link_state = int.from_bytes(data[0:2], byteorder='big')
+        channel_state = int.from_bytes(data[2:4], byteorder='big')
 
         return cls(
             link_state=link_state,
@@ -127,11 +126,11 @@ class RFChannelState:
         )
 
     def to_bytes(self) -> bytes:
-        """Encode channel state to 4 bytes."""
-        return bytes([
-            self.link_state,
-            self.channel_state,
-        ])
+        """Encode channel state to 4 bytes (2 bytes per field)."""
+        return (
+            self.link_state.to_bytes(2, byteorder='big') +
+            self.channel_state.to_bytes(2, byteorder='big')
+        )
 
 
 @attr.s(auto_attribs=True)
@@ -234,11 +233,9 @@ class RFFrame:
         channel_state = RFChannelState.from_bytes(data[idx:idx+4])
         idx += 4
 
-        # Verify CRC
-        # CRC covers all data from start bit up to but not including CRC and end bit
-        # Total length should be: frame_data_len + 4(CRC) + 1(End)
-        # So we exclude 5 bytes (4 CRC + 1 End)
-        crc_data = data[:-5]
+        # At this point, idx points to the CRC field
+        # CRC covers from start_bit (index 0) to end of channel_state (index idx-1)
+        crc_data = data[:idx]  # All data before CRC
         crc_received = int.from_bytes(data[idx:idx+4], byteorder='big')
         idx += 4
 
@@ -250,6 +247,10 @@ class RFFrame:
             )
 
         # Parse end bit
+        if idx >= len(data):
+            raise ValueError(
+                f"RF Frame truncated: missing end bit at index {idx}"
+            )
         end_bit = data[idx]
         if end_bit != cls.END_BIT:
             raise ValueError(
@@ -334,9 +335,12 @@ class RFFrame:
 
         # Build scan data APDU
         scan_data = bytes.fromhex("0107F08BA73609")
-        # Channel bits: 3-bit channel number + 3-bit reserved (00111)
-        # Pack channel number into bits 7-5 (MSB), bits 4-0 fixed to 00111
-        channel_byte = ((channel & 0x07) << 5) | 0x07
+
+        # Encode channel as 3 bits + fixed "00111" suffix (8 bits total)
+        # channel_bits: 3 bits for channel number (1-5)
+        channel_bits = (channel & 0x07)  # Ensure 3 bits
+        channel_byte = (channel_bits << 5) | 0x07  # channel in high 3 bits, 0x07 in low 5 bits
+
         scan_data += bytes([channel_byte])
 
         scan_frame = self.__class__(

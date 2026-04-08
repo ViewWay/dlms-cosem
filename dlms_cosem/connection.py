@@ -251,8 +251,8 @@ class DlmsConnection:
             meter_system_title=meter_system_title,
             global_encryption_key=global_encryption_key,
             global_authentication_key=global_authentication_key,
-            meter_invocation_counter=meter_invocation_counter or 0,
-            client_invocation_counter=client_invocation_counter or 0,
+            meter_invocation_counter=meter_invocation_counter,
+            client_invocation_counter=client_invocation_counter,
             # Moves the state into ready.
             state=dlms_state.DlmsConnectionState(current_state=dlms_state.READY),
             is_pre_established=True,

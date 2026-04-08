@@ -105,14 +105,11 @@ class IPv4Setup:
         """Encode octet-string (tag 0x09)."""
         return self._encode_tlv(0x09, data)
 
-    def _encode_boolean(self, value: bool | None) -> bytes:
-        if value is None: return bytes([0x00])
+    def _encode_boolean(self, value: bool) -> bytes:
         """Encode boolean (tag 0x03)."""
         return self._encode_tlv(0x03, bytes([1 if value else 0]))
 
-    def _encode_integer(self, value: int | None) -> bytes:
-        if value is None:
-            return bytes([0x00])
+    def _encode_integer(self, value: int) -> bytes:
         """Encode integer with appropriate size."""
         if -128 <= value <= 127:
             return self._encode_tlv(0x0F, value.to_bytes(1, 'big', signed=True))
@@ -166,8 +163,7 @@ class IPv4Setup:
                 inner += self._encode_tlv(0x09, str(item).encode('utf-8'))
         return self._encode_tlv(0x01, bytes(inner))
 
-    def _encode_structure(self, data: dict | None) -> bytes:
-        if data is None: return bytes([0x00])
+    def _encode_structure(self, data: dict) -> bytes:
         """Encode structure (tag 0x02)."""
         return self._encode_tlv(0x02, self._encode_dict_as_structure(data))
 
@@ -284,11 +280,11 @@ class IPv4Setup:
         # Attribute 1: logical_name (octet-string)
         result += self._encode_octet_string(self.logical_name.to_bytes())
         # Attribute 3: ip_address (integer)
-        result += self._encode_octet_string(bytes(self.ip_address))
+        result += self._encode_integer(self.ip_address)
         # Attribute 4: subnet_mask (integer)
-        result += self._encode_octet_string(bytes(self.subnet_mask))
+        result += self._encode_integer(self.subnet_mask)
         # Attribute 5: gateway (integer)
-        result += self._encode_octet_string(bytes(self.gateway))
+        result += self._encode_integer(self.gateway)
         # Attribute 6: primary_dns (integer)
         result += self._encode_integer(self.primary_dns)
         # Attribute 7: secondary_dns (integer)

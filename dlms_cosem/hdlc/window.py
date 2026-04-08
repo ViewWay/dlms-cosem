@@ -94,7 +94,7 @@ class SlidingWindow:
             slot = seq % self.window_size
             if self.frames[slot] is not None:
                 frame = self.frames[slot]
-                if frame is not None and frame.sequence_number >= self.base_sequence and frame.sequence_number < self.base_sequence + 8:
+                if frame.sequence_number >= self.base_sequence and frame.sequence_number < self.base_sequence + 8:
                     if not frame.acknowledged:
                         count += 1
         return count
@@ -152,8 +152,7 @@ class SlidingWindow:
         """Mark a frame as transmitted."""
         slot = sequence_number % self.window_size
         if self.frames[slot] is not None:
-            frame_t = self.frames[slot]
-            frame_t.transmitted = True  # type: ignore[union-attr]
+            self.frames[slot].transmitted = True
 
     def acknowledge_received(self, receive_sequence: int) -> List[int]:
         """
@@ -277,7 +276,7 @@ class SlidingWindow:
         self.base_sequence = 0
         self.next_sequence = 0
         self.receive_sequence = 0
-        self.frames = [None] * self.window_size
+        self.frames: List[Optional[FrameInfo]] = [None] * self.window_size
         self.state = WindowState.READY
 
 

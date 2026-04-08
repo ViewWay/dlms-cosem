@@ -96,7 +96,7 @@ class HdlcConnection:
             LOG.debug(f"Added data to buffer", data=data)
             self.buffer += data
 
-    def next_event(self, timeout: float | None = None):
+    def next_event(self, timeout: float = None):
         """
         Will try to parse a frame from the buffer. If a frame is found the buffer is
         cleared of the bytes making up the frame and the frame is returned.

@@ -105,7 +105,7 @@ class GetRequestHandler(RequestHandler):
         apdu = XDlmsApduFactory.apdu_from_bytes(data)
         if isinstance(apdu, GetRequestNormal):
             return self._handle_get_normal(apdu, model)
-        return self._make_exception_response(apdu, b"\x01")  # type: ignore[attr-defined]
+        return self._make_exception_response(apdu, b'\x01')
 
     def _handle_get_normal(self, apdu: GetRequestNormal, model: CosemObjectModel) -> bytes:
         obis_val = apdu.cosem_attribute.instance
@@ -148,7 +148,7 @@ class SetRequestHandler(RequestHandler):
         apdu = XDlmsApduFactory.apdu_from_bytes(data)
         if isinstance(apdu, SetRequestNormal):
             return self._handle_set_normal(apdu, model)
-        return self._make_exception_response(apdu, b"\x01")  # type: ignore[attr-defined]
+        return self._make_exception_response(apdu, b'\x01')
 
     def _handle_set_normal(self, apdu: SetRequestNormal, model: CosemObjectModel) -> bytes:
         obis_bytes = apdu.cosem_attribute.instance
@@ -181,7 +181,7 @@ class ActionRequestHandler(RequestHandler):
         apdu = XDlmsApduFactory.apdu_from_bytes(data)
         if isinstance(apdu, ActionRequestNormal):
             return self._handle_action_normal(apdu, model)
-        return self._make_exception_response(apdu, b"\x01")  # type: ignore[attr-defined]
+        return self._make_exception_response(apdu, b'\x01')
 
     def _handle_action_normal(self, apdu: ActionRequestNormal, model: CosemObjectModel) -> bytes:
         obis_val = apdu.cosem_method.instance
@@ -216,7 +216,7 @@ class ActionRequestHandler(RequestHandler):
         if invoke_id is None:
             return bytes([0xC1, 0x00, 0x00])
         return ExceptionResponse(
-            invoke_id_and_priority=invoke_id,  # type: ignore[call-arg]
+            invoke_id_and_priority=invoke_id,
             state_error=state_error,
         ).to_bytes()
 

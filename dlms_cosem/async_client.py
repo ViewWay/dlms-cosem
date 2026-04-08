@@ -72,7 +72,7 @@ class AsyncDlmsClient:
 
     async def session(self) -> Any:
         """Async context manager for a DLMS session."""
-        return self._AsyncSession(self)  # type: ignore[attr-defined]
+        return self._AsyncSession(self)
 
     def next_invoke_id(self) -> int:
         current = self.invoke_id
@@ -138,7 +138,7 @@ class AsyncDlmsClient:
             try:
                 hls_response = await self._perform_hls_reply()
             except ActionError as e:
-                raise HLSError("HLS error") from e  # type: ignore[call-arg]
+                raise HLSError from e
             if not hls_response:
                 raise HLSError("No HLS data in response")
             hls_data = utils.parse_as_dlms_data(hls_response)

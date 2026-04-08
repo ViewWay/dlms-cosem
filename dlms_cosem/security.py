@@ -1054,7 +1054,7 @@ def _gmssl_sig_parse(sig_hex: str) -> SM2Signature:
     return SM2Signature(r, s)
 
 
-def sm2_sign(private_key: SM2PrivateKey, message: bytes, public_key: SM2PublicKey | None = None) -> SM2Signature:
+def sm2_sign(private_key: SM2PrivateKey, message: bytes, public_key: SM2PublicKey = None) -> SM2Signature:
     """
     Sign a message using SM2 (GB/T 32918-2016)
 

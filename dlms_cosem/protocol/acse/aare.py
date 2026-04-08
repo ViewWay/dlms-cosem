@@ -27,7 +27,7 @@ class Asn1Integer:
         if tag != cls.TAG.to_bytes(1, "big"):
             raise ValueError(
                 f"Data provided is not of the correct type. Tag is {tag} but should "
-                f"be {cls.TAG!r}"
+                f"be {cls.TAG}"
             )
         return cls(value=int.from_bytes(data, byteorder="big"))
 
@@ -201,7 +201,7 @@ class ApplicationAssociationResponse(acse_base.AbstractAcseApdu):
         # Assumes that the protocol-version is 1 and we don't need to decode it
 
         # Decode the AARQ  data
-        object_dict: dict[str, Any] = dict()
+        object_dict = dict()
 
         # use the data in tags to go through the bytes and create objects.
         while True:

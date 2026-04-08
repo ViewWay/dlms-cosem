@@ -105,7 +105,7 @@ class ProfileGenericBufferParser:
         """
         data_decoder = a_xdr.AXdrDecoder(
             encoding_conf=a_xdr.EncodingConf(
-                attributes=[a_xdr.Sequence(attribute_name="data")]  # type: ignore[abstract,call-arg]
+                attributes=[a_xdr.Sequence(attribute_name="data")]
             )
         )
         entries: List[List[Any]] = data_decoder.decode(profile_bytes)["data"]
@@ -168,7 +168,7 @@ class ProfileGenericBufferParser:
                             )
 
                         else:
-                            parsed_column.append(None)  # type: ignore[arg-type]
+                            parsed_column.append(None)
 
             parsed_entries.append(parsed_column)
 
@@ -245,7 +245,7 @@ class AssociationObjectListParser:
         """
         data_decoder = a_xdr.AXdrDecoder(
             encoding_conf=a_xdr.EncodingConf(
-                attributes=[a_xdr.Sequence(attribute_name="data")]  # type: ignore[abstract,call-arg]
+                attributes=[a_xdr.Sequence(attribute_name="data")]
             )
         )
         entries: List[List[Any]] = data_decoder.decode(profile_bytes)["data"]

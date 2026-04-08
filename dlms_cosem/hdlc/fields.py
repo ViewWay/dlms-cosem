@@ -53,7 +53,7 @@ class SnrmControlField(_AbstractHdlcControlField):
 
     def to_bytes(self) -> bytes:
         out = 0b10000011
-        if self.is_final:
+        if self.is_final():
             out |= 0b00010000
         return out.to_bytes(1, "big")
 
@@ -86,7 +86,7 @@ class UaControlField(_AbstractHdlcControlField):
         Returns byte representation of the field.
         """
         out = 0b01100011
-        if self.is_final:
+        if self.is_final():
             out |= 0b00010000
         return out.to_bytes(1, "big")
 

@@ -119,14 +119,11 @@ class MBusClient:
         """Encode octet-string (tag 0x09)."""
         return self._encode_tlv(0x09, data)
 
-    def _encode_boolean(self, value: bool | None) -> bytes:
-        if value is None: return bytes([0x00])
+    def _encode_boolean(self, value: bool) -> bytes:
         """Encode boolean (tag 0x03)."""
         return self._encode_tlv(0x03, bytes([1 if value else 0]))
 
-    def _encode_integer(self, value: int | None) -> bytes:
-        if value is None:
-            return bytes([0x00])
+    def _encode_integer(self, value: int) -> bytes:
         """Encode integer with appropriate size."""
         if -128 <= value <= 127:
             return self._encode_tlv(0x0F, value.to_bytes(1, 'big', signed=True))
@@ -163,7 +160,7 @@ class MBusClient:
         inner = bytearray()
         for item in items:
             if hasattr(item, 'to_bytes'):
-                inner += item.to_bytes()  # type: ignore[union-attr]
+                inner += item.to_bytes()
             elif isinstance(item, dict):
                 inner += self._encode_dict_as_structure(item)
             elif isinstance(item, bool):
@@ -180,8 +177,7 @@ class MBusClient:
                 inner += self._encode_tlv(0x09, str(item).encode('utf-8'))
         return self._encode_tlv(0x01, bytes(inner))
 
-    def _encode_structure(self, data: dict | None) -> bytes:
-        if data is None: return bytes([0x00])
+    def _encode_structure(self, data: dict) -> bytes:
         """Encode structure (tag 0x02)."""
         return self._encode_tlv(0x02, self._encode_dict_as_structure(data))
 
@@ -190,7 +186,7 @@ class MBusClient:
         inner = bytearray()
         for key, value in d.items():
             if hasattr(value, 'to_bytes'):
-                inner += value.to_bytes()  # type: ignore[union-attr]
+                inner += value.to_bytes()
             elif isinstance(value, bool):
                 inner += self._encode_boolean(value)
             elif isinstance(value, int):
@@ -286,7 +282,7 @@ class MBusClient:
         if value is None:
             return b''
         if hasattr(value, 'to_bytes'):
-            return value.to_bytes()  # type: ignore[union-attr]
+            return value.to_bytes()
         if isinstance(value, (bytes, bytearray)):
             return bytes(value)
         return str(value).encode('utf-8')
@@ -296,9 +292,9 @@ class MBusClient:
         from dlms_cosem.cosem.base import CosemAttribute
         result = bytearray()
         # Attribute 1: logical_name (octet-string)
-        result += self._encode_octet_string(self.logical_name.to_bytes())  # type: ignore[union-attr]
+        result += self._encode_octet_string(self.logical_name.to_bytes())
         # Attribute 3: mbus_port_reference
-        result += self._encode_octet_string(self.mbus_port_reference.to_bytes())  # type: ignore[union-attr]
+        result += self._encode_octet_string(self.mbus_port_reference.to_bytes())
         # Attribute 4: capture_definition (array)
         result += self._encode_array(self.capture_definition)
         # Attribute 5: capture_period (integer)

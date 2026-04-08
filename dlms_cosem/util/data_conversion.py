@@ -19,7 +19,7 @@ class DataConversion:
     """
 
     @staticmethod
-    def hex_to_dec(hex_str: str, data_type: str | None = None) -> int:
+    def hex_to_dec(hex_str: str, data_type: str = None) -> int:
         """
         Convert hexadecimal string to decimal integer.
 
@@ -41,7 +41,7 @@ class DataConversion:
         return num
 
     @staticmethod
-    def dec_to_hex_str(dec: int, length: int = 0, data_type: str | None = None) -> str:
+    def dec_to_hex_str(dec: int, length: int = 0, data_type: str = None) -> str:
         """
         Convert decimal integer to hexadecimal string.
 

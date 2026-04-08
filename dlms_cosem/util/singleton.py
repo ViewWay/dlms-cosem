@@ -4,9 +4,13 @@ This module provides a thread-safe singleton class for global state management.
 Use for compatibility with legacy code patterns.
 
 Reference: pdlms/pdlms/util/singleton.py
+
+WARNING: The ObisDataType and MetersLogsDict dictionaries can accumulate
+unbounded data. Call reset() or clear_cache() periodically to prevent memory leaks.
 """
 
 import threading
+from typing import Dict, Any
 
 
 class Singleton:
@@ -15,6 +19,9 @@ class Singleton:
 
     Provides class-level attributes for storing connection objects,
     configuration parameters, and communication state.
+
+    WARNING: ObisDataType and MetersLogsDict can grow unbounded.
+    Use clear_cache() to reset them when needed.
 
     Attributes:
         CONN: Connection object
@@ -32,8 +39,8 @@ class Singleton:
         HdlcHeartBeatTimeOut: HDLC heartbeat timeout (seconds)
         WpduHeartBeatTimeOut: WPDU heartbeat timeout (seconds)
         DefaultConfigAddress: Default configuration address
-        ObisDataType: OBIS data type mapping
-        MetersLogsDict: Meter logs dictionary
+        ObisDataType: OBIS data type mapping (WARNING: can grow unbounded)
+        MetersLogsDict: Meter logs dictionary (WARNING: can grow unbounded)
         SendFrameControl: Send frame control string
         RecvFrameControl: Receive frame control string
     """
@@ -53,8 +60,8 @@ class Singleton:
     HdlcHeartBeatTimeOut = 120
     WpduHeartBeatTimeOut = 60
     DefaultConfigAddress = "192.168.234.194"
-    ObisDataType: dict[str, type] = {}
-    MetersLogsDict: dict[str, list] = {}
+    ObisDataType: Dict[str, Any] = {}
+    MetersLogsDict: Dict[str, Any] = {}
     SendFrameControl = ""
     RecvFrameControl = ""
     _instance_lock = threading.Lock()
@@ -64,14 +71,21 @@ class Singleton:
         """
         Create or return singleton instance with thread safety.
 
+        Uses double-check locking pattern for thread safety.
+
         Returns:
             Singleton instance
         """
-        if cls._instance is None:
-            with cls._instance_lock:
-                if cls._instance is None:
-                    cls._instance = object.__new__(cls)
-        return cls._instance
+        # Fast path: check class variable without lock
+        if cls._instance is not None:
+            return cls._instance
+
+        # Slow path: acquire lock and check again
+        with cls._instance_lock:
+            # Double-check: another thread may have created instance
+            if cls._instance is None:
+                cls._instance = object.__new__(cls)
+            return cls._instance
 
     @classmethod
     def reset(cls):
@@ -95,3 +109,25 @@ class Singleton:
         cls.MetersLogsDict = {}
         cls.SendFrameControl = ""
         cls.RecvFrameControl = ""
+
+    @classmethod
+    def clear_cache(cls):
+        """Clear cache dictionaries to prevent memory leaks.
+
+        Call this periodically if your application uses ObisDataType
+        or MetersLogsDict extensively.
+        """
+        cls.ObisDataType.clear()
+        cls.MetersLogsDict.clear()
+
+    @classmethod
+    def get_cache_size(cls) -> dict:
+        """Get approximate size of cached dictionaries.
+
+        Returns:
+            Dict with 'obis_data_count' and 'meters_logs_count' keys
+        """
+        return {
+            "obis_data_count": len(cls.ObisDataType),
+            "meters_logs_count": len(cls.MetersLogsDict),
+        }

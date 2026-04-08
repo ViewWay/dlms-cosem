@@ -169,10 +169,10 @@ def cmd_convert(args: argparse.Namespace) -> int:
         # Determine output format
         output_format = args.format or output_path.suffix.lstrip('.')
         format_map = {
-            'toml': KeyFormat.TOML,  # type: ignore[attr-defined]
-            'yaml': KeyFormat.YAML,  # type: ignore[attr-defined]
-            'env': KeyFormat.ENV,  # type: ignore[attr-defined]
-            'json': KeyFormat.JSON,  # type: ignore[attr-defined]
+            'toml': KeyFormat.TOML,
+            'yaml': KeyFormat.YAML,
+            'env': KeyFormat.ENV,
+            'json': KeyFormat.JSON,
         }
 
         if output_format not in format_map:

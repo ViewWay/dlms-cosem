@@ -26,7 +26,7 @@ class _SentinelBase(type):
 
 
 def make_sentinel(name):
-    cls = _SentinelBase(name, (_SentinelBase,), {})  # type: ignore[assignment]
+    cls = _SentinelBase(name, (_SentinelBase,), {})
     cls.__class__ = cls
     return cls
 

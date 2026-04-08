@@ -92,7 +92,7 @@ class GeneralGlobalCipher(AbstractXDlmsApdu):
             auth_key=authentication_key,
             invocation_counter=self.invocation_counter,
             cipher_text=self.ciphered_text,
-            system_title=self.system_title,  # type: ignore[arg-type]
+            system_title=self.system_title,
         )
 
         return bytes(plain_text)

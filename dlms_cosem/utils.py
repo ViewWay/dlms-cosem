@@ -7,7 +7,7 @@ from dlms_cosem.dlms_data import decode_variable_integer
 def parse_as_dlms_data(data: bytes):
     data_decoder = a_xdr.AXdrDecoder(
         encoding_conf=a_xdr.EncodingConf(
-            attributes=[a_xdr.Sequence(attribute_name="data")]  # type: ignore[abstract,call-arg]
+            attributes=[a_xdr.Sequence(attribute_name="data")]
         )
     )
     return data_decoder.decode(data)["data"]
