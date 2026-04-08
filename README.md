@@ -2,7 +2,8 @@
 
 **Complete DLMS/COSEM protocol stack for Python** — sans-io implementation with HDLC framing, A-XDR codec, 100+ COSEM IC classes, multiple transport layers, security suites, server, automation, and analytics.
 
-[![Tests](https://img.shields.io/badge/tests-6243%20passed-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-6300%2B%20passed-brightgreen)]()
+[![Security Tests](https://img.shields.io/badge/security%20tests-60%2B%20passed-blue)]()
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)]()
 [![License: BSL 1.1](https://img.shields.io/badge/license-BSL%201.1-orange.svg)]()
 
@@ -10,9 +11,25 @@
 
 ### Full DLMS/COSEM Protocol Stack
 - **COSEM Application Layer**: GET, SET, ACTION, GET.WITH_LIST, Data Notification
-- **ACSE Association**: AARQ/AARE with HLS-ISM and LLS authentication
+- **ACSE Association**: AARQ/AARE with HLS-ISM, HLS-GMAC, and LLS authentication
 - **A-XDR Codec**: Complete ASN.1-based DLMS data encoding/decoding
 - **HDLC Framing**: Full LLC/MAC layer with segmentation, windowing, and CRC-16
+
+### China GB/T 17215 Extensions
+- **GB Tariff System**: 4-rate (Peak, Shoulder, Flat, Valley) time-of-use tariff
+- **DLMS/T CP 28**: Local protocol frame format for Chinese meters
+- **GB OBIS Codes**: Extended OBIS codes for Chinese standard meters
+- **RS485 Configuration**: Standard communication parameters
+
+### SML Protocol Support
+- **SML Parser**: Smart Message Language parser for German/European meters
+- **SML-to-DLMS Bridge**: Convert SML data to COSEM format
+- **BSI TR-03109**: Compliant with EDL 21 standard
+
+### Protocol Frame Support
+- **Gateway Frame**: GPRS/3G/4G routing with network addressing
+- **RF Frame**: Wireless ISM band communication (470MHz)
+- **Signal Quality**: RSSI and SNR monitoring for wireless meters
 
 ### COSEM IC Classes (100+)
 
@@ -133,7 +150,9 @@ With optional dependencies:
 ```bash
 pip install dlms-cosem[test]      # Testing
 pip install dlms-cosem[docs]      # Documentation
-pip install dlms-cosem[keyring]   # System keyring support
+pip install dlmsosem[keyring]   # System keyring support
+pip install dlms-cosem[sml]       # SML parser support
+pip install dlms-cosem[gb]        # China GB/T extensions
 ```
 
 ### Cryptographic Dependencies
@@ -261,11 +280,40 @@ for msg in messages:
 ### China GB Extensions
 
 ```python
-from dlms_cosem.china_gb import GB17215Meter
+from dlms_cosem.china_gb import GBMeter
 
-meter = GB17215Meter(port="/dev/ttyUSB0")
-await meter.connect()
-data = await meter.read_demand()  # GB-specific demand reading
+meter = GBMeter("123456789012")
+meter.setup_china_standard_tariff()
+```
+
+### HLS Connection with Encryption
+
+```python
+from dlms_cosem import DlmsConnectionSettings
+from dlms_cosem.io import TcpIO
+from dlms_cosem.transport import HdlcTransport
+from dlms_cosem import AsyncDlmsClient
+
+# Configure HLS-GMAC authentication
+settings = DlmsConnectionSettings(
+    client_logical_address=16,
+    server_logical_address=1,
+    authentication="hls",  # HLS-GMAC
+    authentication_key=bytes.fromhex("D0D1D2D3D4D5D6D7D8D9DADBDCDDDEDF"),
+    encryption_key=bytes.fromhex("000102030405060708090A0B0C0D0E0F"),
+    client_system_title=bytes.fromhex("0000000000000000"),
+)
+
+io = TcpIO(host="10.32.24.151", port=4059)
+transport = HslcTransport(io)
+client = AsyncDlmsClient(transport, settings)
+
+await client.connect()
+
+# GET operation (encrypted)
+value = await client.get("0.0.1.0.0.255")  # Clock
+
+await client.close()
 ```
 
 ## Architecture
@@ -300,10 +348,13 @@ dlms_cosem/
 │   │   ├── set.py           # SET service
 │   │   ├── action.py        # ACTION service
 │   │   └── data_notification.py
-│   └── acse/                # Association control
-│       ├── aarq.py          # Association request
-│       └── aare.py          # Association response
-├── cosem/                   # COSEM IC classes (50+)
+│   ├── acse/                # Association control
+│   │   ├── aarq.py          # Association request
+│   │   └── aare.py          # Association response
+│   └── frame/               # Protocol frames
+│       ├── gateway/         # Gateway frames (GPRS/3G/4G)
+│       └── rf/              # RF frames (wireless)
+├── cosem/                   # COSEM IC classes (100+)
 │   ├── factory.py           # Object factory
 │   ├── register.py          # IC 3
 │   ├── clock.py             # IC 8
@@ -311,7 +362,20 @@ dlms_cosem/
 │   ├── demand_register.py   # IC 5
 │   └── ...
 ├── sml/                     # SML parser
-├── china_gb/                # China GB/T extensions
+│   ├── parser.py            # SML protocol parser
+│   ├── models.py            # SML data models
+│   ├── bridge.py            # SML-to-DLMS bridge
+│   └── types.py             # SML type definitions
+├── china_gb/                # China GB/T 17215 extensions
+│   ├── meter.py             # GB smart meter model
+│   ├── tariff.py            # GB tariff configuration
+│   ├── frame.py             # DLMS/T CP 28 frames
+│   ├── obis.py              # GB OBIS code mappings
+│   └── types.py             # GB enumerations
+├── util/                    # Utility functions
+│   ├── data_conversion.py   # Data format conversion
+│   ├── singleton.py         # Singleton pattern
+│   └── log.py               # Logging utilities
 ├── key_management/          # Key management system
 │   ├── key_manager.py
 │   ├── key_rotator.py
@@ -320,26 +384,90 @@ dlms_cosem/
 ├── ws_gateway.py            # WebSocket gateway
 ├── cli/                     # CLI tools
 │   └── dlms_keys.py         # Key management CLI
-└── tests/                   # 6243+ tests
+├── config/                  # Configuration management
+│   ├── __init__.py          # Config loader
+│   ├── layered_config.py    # Layered config (Basic/Key/HDLC/WPDU/AARQ)
+│   └── env_config.py        # Environment variable config
+└── tests/                   # 6300+ tests
+    ├── test_wpdu_security.py     # WPDU security tests (44)
+    ├── test_hdlc_security.py     # HDLC security tests (15)
+    └── test_connection_security.py  # Connection security tests
 ```
 
 ## Performance
 
-Benchmark on Python 3.13, Apple M2, 6243+ tests:
+Benchmark on Python 3.13, Apple M2, 6300+ tests:
 
 | Metric | Value |
 |--------|-------|
-| Test suite | 6243+ passed, 0 failed |
+| Test suite | 6300+ passed, 0 failed |
+| Security tests | 60+ passed |
 | A-XDR encode/decode | ~1M ops/sec |
 | HDLC frame parse | ~500K frames/sec |
 | Profile Generic (1000 entries) | ~2ms decode |
 | Association handshake | ~5ms (HLS-ISM) |
+| HLS-GMAC encryption/decryption | ~0.5ms per operation |
+| Concurrent connections | ~6.6 conn/sec (5 threads) |
+| TCP connection time | ~50-100ms (local network) |
+
+## Testing
+
+### Test Suite
+
+- **Total Tests**: 6300+ tests
+- **Security Tests**: 60+ security tests covering WPDU and HDLC layers
+- **Coverage**: HDLC framing, TCP transport, security suites, COSEM interface classes
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run security tests only
+pytest tests/test_wpdu_security.py tests/test_hdlc_security.py -v
+
+# Run connection security tests
+pytest tests/test_connection_security.py -v
+
+# Run with coverage
+pytest tests/ --cov=dlms_cosem --cov-report=html
+```
+
+### Security Testing Scripts
+
+```bash
+# WPDU security test (standalone)
+python scripts/test_wpdu_security.py --host 10.32.24.151 --port 4059
+
+# Concurrent connection test
+python scripts/test_concurrent_connections.py --max 100 --workers 10
+
+# Meter functional test
+python scripts/meter_functional_test.py --host 10.32.24.151
+```
+
+### Configuration
+
+Use environment variables or `.env` file for meter configuration:
+
+```bash
+# .env file
+METER_HOST=10.32.24.151
+METER_PORT=4059
+METER_CLIENT_ADDRESS=16
+METER_SERVER_ADDRESS=1
+SECURITY_LEVEL=hls
+SECURITY_SUITE=HLS_GMAC
+AUTHENTICATION_KEY=D0D1D2D3D4D5D6D7D8D9DADBDCDDDEDF
+ENCRYPTION_KEY=000102030405060708090A0B0C0D0E0F
+```
 
 ## Contributing
 
 1. Fork the repository
 2. Install dev dependencies: `pip install -e ".[test]"`
-3. Run tests: `python -m pytest tests/ -v`
+3. Run tests: `pytest tests/ -v`
 4. Format code: `ruff format .`
 5. Lint: `ruff check .`
 6. Submit a pull request
@@ -350,6 +478,7 @@ Benchmark on Python 3.13, Apple M2, 6243+ tests:
 - All COSEM IC classes follow the pattern in `dlms_cosem/cosem/base.py`
 - Use `CosemObjectFactory` for creating meter object collections
 - Tests use pytest fixtures for meter simulation
+- For security testing, use the provided scripts in `scripts/` directory
 
 ## License
 

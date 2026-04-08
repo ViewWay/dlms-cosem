@@ -106,4 +106,5 @@ multi_line_output = 3
 [dependency-groups]
 dev = [
     "hypothesis>=6.141.1",
+    "pytest>=8.4.2",
 ]
