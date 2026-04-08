@@ -1,26 +1,10 @@
-"""
-Test configuration — lazy imports to avoid loading entire dlms_cosem package.
-
-Root cause of 22GB memory: pytest collects ALL test files at startup,
-triggering conftest.py imports → dlms_cosem.__init__ → cosem.__init__
-→ 100+ IC classes × 57 test files × 4 workers = OOM.
-
-Fix: import only the specific sub-modules needed for fixtures,
-not the package-level re-exports.
-"""
 import pytest
 
+import dlms_cosem.security
+from dlms_cosem import cosem, dlms_data, enumerations
+from dlms_cosem.connection import DlmsConnection
+from dlms_cosem.protocol import acse, xdlms
 
-# ─── Lazy module cache ──────────────────────────────────────
-def _require(name):
-    """Import a module on first use and cache it."""
-    import importlib, sys
-    if name not in sys.modules:
-        importlib.import_module(name)
-    return sys.modules[name]
-
-
-# ─── Fixtures: simple bytes (zero-cost) ─────────────────────
 
 @pytest.fixture()
 def system_title() -> bytes:
@@ -67,12 +51,8 @@ def master_key() -> bytes:
     return bytes.fromhex("00112233445566778899AABBCCDDEEFF")
 
 
-# ─── Fixtures: need module imports (lazy) ──────────────────
-
 @pytest.fixture()
 def aarq():
-    acse = _require("dlms_cosem.protocol.acse")
-    xdlms = _require("dlms_cosem.protocol.xdlms")
 
     return acse.ApplicationAssociationRequest(
         ciphered=False,
@@ -113,8 +93,8 @@ def aarq():
 
 @pytest.fixture()
 def aare():
-    enumerations = _require("dlms_cosem.enumerations")
-    acse = _require("dlms_cosem.protocol.acse")
+    from dlms_cosem import enumerations
+    from dlms_cosem.protocol import acse
     from dlms_cosem.protocol.xdlms import Conformance, InitiateResponse
 
     return acse.ApplicationAssociationResponse(
@@ -158,8 +138,9 @@ def aare():
 
 
 @pytest.fixture()
-def ciphered_hls_aare(aare, meter_system_title):
-    enumerations = _require("dlms_cosem.enumerations")
+def ciphered_hls_aare(
+    aare: acse.ApplicationAssociationResponse, meter_system_title: bytes
+) -> acse.ApplicationAssociationResponse:
     aare.ciphered = True
     aare.system_title = meter_system_title
     aare.authentication = enumerations.AuthenticationMechanism.HLS_GMAC
@@ -167,27 +148,25 @@ def ciphered_hls_aare(aare, meter_system_title):
 
 
 @pytest.fixture()
-def rlrq():
-    acse = _require("dlms_cosem.protocol.acse")
-    data = bytes.fromhex("6203800100")
+def rlrq() -> acse.ReleaseRequest:
+
+    data = bytes.fromhex("6203800100")  # Normal no user-information
     rlrq = acse.ReleaseRequest.from_bytes(data)
     return rlrq
 
 
 @pytest.fixture()
-def rlre():
-    acse = _require("dlms_cosem.protocol.acse")
+def rlre() -> acse.ReleaseResponse:
+
     data = b"c\x03\x80\x01\x00"
     rlre = acse.ReleaseResponse.from_bytes(data)
     return rlre
 
 
 @pytest.fixture()
-def get_request():
-    cosem = _require("dlms_cosem.cosem")
-    enumerations = _require("dlms_cosem.enumerations")
-    xdlms = _require("dlms_cosem.protocol.xdlms")
+def get_request() -> xdlms.GetRequestNormal:
 
+    # invocation counter
     return xdlms.GetRequestNormal(
         cosem_attribute=cosem.CosemAttribute(
             interface=enumerations.CosemInterface.DATA,
@@ -198,11 +177,9 @@ def get_request():
 
 
 @pytest.fixture()
-def set_request():
-    cosem = _require("dlms_cosem.cosem")
-    enumerations = _require("dlms_cosem.enumerations")
-    xdlms = _require("dlms_cosem.protocol.xdlms")
+def set_request() -> xdlms.SetRequestNormal:
 
+    # invocation counter
     return xdlms.SetRequestNormal(
         cosem_attribute=cosem.CosemAttribute(
             interface=enumerations.CosemInterface.CLOCK,
@@ -218,10 +195,7 @@ def set_request():
 
 
 @pytest.fixture()
-def set_response():
-    enumerations = _require("dlms_cosem.enumerations")
-    xdlms = _require("dlms_cosem.protocol.xdlms")
-
+def set_response() -> xdlms.SetResponseNormal:
     return xdlms.SetResponseNormal(
         result=enumerations.DataAccessResult.SUCCESS,
         invoke_id_and_priority=xdlms.InvokeIdAndPriority(
@@ -231,18 +205,14 @@ def set_response():
 
 
 @pytest.fixture()
-def action_request():
-    cosem = _require("dlms_cosem.cosem")
-    enumerations = _require("dlms_cosem.enumerations")
-    xdlms = _require("dlms_cosem.protocol.xdlms")
-
+def action_request() -> xdlms.ActionRequestNormal:
     return xdlms.ActionRequestNormal(
         cosem_method=cosem.CosemMethod(
             interface=enumerations.CosemInterface.DISCONNECT_CONTROL,
             instance=cosem.Obis.from_string("0.0.96.3.10.255"),
             method=1,
         ),
-        data=_require("dlms_cosem.dlms_data").UnsignedLongData(0).to_bytes(),
+        data=dlms_data.UnsignedLongData(0).to_bytes(),
         invoke_id_and_priority=xdlms.InvokeIdAndPriority(
             invoke_id=1, confirmed=True, high_priority=True
         ),
@@ -250,9 +220,7 @@ def action_request():
 
 
 @pytest.fixture()
-def exception_response():
-    enumerations = _require("dlms_cosem.enumerations")
-    xdlms = _require("dlms_cosem.protocol.xdlms")
+def exception_response() -> xdlms.ExceptionResponse:
 
     return xdlms.ExceptionResponse(
         state_error=enumerations.StateException.SERVICE_NOT_ALLOWED,
@@ -261,24 +229,28 @@ def exception_response():
 
 
 @pytest.fixture()
-def connection_with_hls(system_title, global_encryption_key, global_authentication_key):
-    connection = _require("dlms_cosem.connection")
-    security = _require("dlms_cosem.security")
+def connection_with_hls(
+    system_title, global_encryption_key, global_authentication_key
+) -> DlmsConnection:
 
-    return connection.DlmsConnection(
+    return DlmsConnection(
         client_system_title=system_title,
-        authentication=security.HighLevelSecurityGmacAuthentication(),
+        authentication=dlms_cosem.security.HighLevelSecurityGmacAuthentication(),
         global_encryption_key=global_encryption_key,
         global_authentication_key=global_authentication_key,
         security_suite=0,
     )
 
 
-# ─── Mock Transport ─────────────────────────────────────────
+
+# ─── Mock Transport (类 pdlms) ────────────────────────────────
 
 
 class MockTransport:
-    """可配置的 Mock 传输：记录每次 send 的输入，按队列返回预设响应。"""
+    """
+    可配置的 Mock 传输：记录每次 send 的输入，按队列返回预设响应。
+    用于 client/connection 测试。
+    """
 
     def __init__(self, responses=None):
         self.client_logical_address = 16
@@ -294,35 +266,45 @@ class MockTransport:
         pass
 
     def send(self, bytes_to_send: bytes) -> bytes:
+        """记录发送的字节，从队列返回预设响应。"""
         self.sent.append(bytes_to_send)
         if self._responses:
             return self._responses.pop(0)
         return b""
 
     def enqueue_response(self, data: bytes):
+        """追加响应到队列。"""
         self._responses.append(data)
+
 
 
 @pytest.fixture()
 def mock_transport():
+    """返回一个空的 Mock 传输，可 enqueue_response 后供测试使用。"""
     return MockTransport()
+
 
 
 # ─── Golden Vector 固定字节样本 ────────────────────────────
 
+# 最小 AARE 接受：0x61 + 长度 + 0xA1 上下文 + 0xA2 result(0)
 SAMPLE_AARE_ACCEPTED = bytes.fromhex(
     "61 29 A1 09 06 07 60 85 74 05 08 01 01 A2 01 00".replace(" ", "")
 )
 
-SAMPLE_CLIENT_SYSTEM_TITLE = b"dlms\x00\x01\x02\x03\x04"
+
+# 8 字节 system title 与 16 字节密钥（GCM 测试用）
+SAMPLE_CLIENT_SYSTEM_TITLE = b"dlms\x00\x01\x02\x03\x04"  # 8 bytes
 SAMPLE_METER_SYSTEM_TITLE = b"meter123"
-SAMPLE_ENCRYPTION_KEY = bytes(range(16))
-SAMPLE_AUTH_KEY = bytes(range(16, 32))
+SAMPLE_ENCRYPTION_KEY = bytes(range(16))  # 0x00..0x0F
+SAMPLE_AUTH_KEY = bytes(range(16, 32))     # 0x10..0x1F
+
 
 
 @pytest.fixture()
 def sample_aare_accepted():
     return SAMPLE_AARE_ACCEPTED
+
 
 
 @pytest.fixture()

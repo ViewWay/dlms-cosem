@@ -171,5 +171,5 @@ class TestMeterSimulation:
 
 
 # Import needed for test
-from dlms_cosem.cosem.C31_QualityControl import QualityFlag
+from dlms_cosem.cosem.quality_control import QualityFlag
 from dlms_cosem.cosem.C7_ProfileGeneric import SortMethod
